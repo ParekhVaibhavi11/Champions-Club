@@ -4,14 +4,20 @@ export const getMenu = () => repo.getMenu();
 export const getTables = () => repo.getTables();
 export const listOpenOrders = () => repo.listOpenOrders();
 
-export const createTab = async ({ table_id, member_id, guest_name, staffId, items }) => {
+export const createTab = async ({ table_id, member_id, guest_name, guestName, staffId, items }) => {
   const tableId = Number(table_id);
   if (!Number.isInteger(tableId) || !Array.isArray(items) || !items.length || items.some((item) => !Number.isInteger(Number(item.menu_item_id)) || !Number.isInteger(Number(item.quantity)) || Number(item.quantity) < 1)) {
     const error = new Error('table_id and at least one valid menu item with positive quantity are required.');
     error.statusCode = 400;
     throw error;
   }
-  return repo.createTab({ tableId, memberId: member_id ? Number(member_id) : null, guestName, staffId, items: items.map((item) => ({ ...item, menu_item_id: Number(item.menu_item_id), quantity: Number(item.quantity) })) });
+  return repo.createTab({
+    tableId,
+    memberId: member_id ? Number(member_id) : null,
+    guestName: guest_name || guestName || null,
+    staffId,
+    items: items.map((item) => ({ ...item, menu_item_id: Number(item.menu_item_id), quantity: Number(item.quantity) }))
+  });
 };
 
 export const appendItems = async (orderId, items) => {

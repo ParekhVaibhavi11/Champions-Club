@@ -29,9 +29,11 @@ import { InventoryManager } from '../features/shop/InventoryManager';
 import { CafePOS } from '../features/cafe/CafePOS';
 import { KitchenQueue } from '../features/cafe/KitchenQueue';
 import { ShopCatalog } from '../features/shop/ShopCatalog';
+import { CafeMenu } from '../features/cafe/CafeMenu';
 import { AdminFinance } from '../features/finance/AdminFinance';
 import { AdminHr } from '../features/finance/AdminHr';
 import { ShopPageLayout } from '../layouts/ShopPageLayout';
+import { CafePageLayout } from '../layouts/CafePageLayout';
 
 export const AppRoutes = () => {
   return (
@@ -44,14 +46,13 @@ export const AppRoutes = () => {
         <Route path="/plans" element={<Plans />} />
         <Route path="/sports" element={<SportsShowcase />} />
         <Route path="/availability" element={<AvailabilityMatrix />} />
-        {/* Placeholder pages to be filled in upcoming modules */}
-        <Route path="/shop" element={<div className="p-8 text-center text-gray-600 font-bold">Public Gear Shop Catalog (Module 5)</div>} />
         <Route path="/trial" element={<TrialRequest />} />
         <Route path="/trial/status" element={<TrialStatus />} />
         <Route path="/contact" element={<TrialRequest />} />
       </Route>
 
       <Route path="/shop" element={<ShopPageLayout><ShopCatalog /></ShopPageLayout>} />
+      <Route path="/cafe" element={<CafePageLayout><CafeMenu /></CafePageLayout>} />
 
       {/* Member Routes */}
       <Route
@@ -66,6 +67,7 @@ export const AppRoutes = () => {
         <Route path="membership" element={<MemberPlan />} />
         <Route path="book-court" element={<MemberBookingFlow />} />
         <Route path="social-play" element={<SocialPlay />} />
+        <Route path="cafe" element={<CafeMenu />} />
       </Route>
 
       {/* Front Desk Routes */}
@@ -108,6 +110,7 @@ export const AppRoutes = () => {
       >
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="courts" element={<CourtManagement />} />
+        <Route path="cafe" element={<CafePOS />} />
         <Route path="finance" element={<AdminFinance />} />
         <Route path="hr" element={<AdminHr />} />
       </Route>

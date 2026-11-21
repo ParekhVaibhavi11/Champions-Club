@@ -12,6 +12,9 @@ export const Navbar = () => {
 
   const isHome = location.pathname === '/';
   const isAdmin = isAuthenticated && user?.role === 'admin';
+  const isMember = isAuthenticated && (user?.role === 'member' || Boolean(user?.membership_tier) || Boolean(user?.membership_id));
+  const isMemberOrAdmin = isMember || isAdmin;
+  const cafePath = isAdmin ? '/admin/cafe' : (isMember ? '/member/cafe' : '/cafe');
 
   const handleBack = () => {
     // If there is browser history, go back; otherwise navigate to root
@@ -35,14 +38,12 @@ export const Navbar = () => {
     return 'default';
   };
 
-  const isMember = isAuthenticated && user?.role === 'member';
-
   const navLinks = [
     { label: 'Sports Arenas', path: '/sports' },
     { label: 'Court Availability', path: '/availability' },
     { label: 'Memberships', path: '/plans' },
     { label: 'Gear Shop', path: '/shop' },
-    ...(isAdmin ? [{ label: 'Dashboard', path: '/admin/dashboard' }] : []),
+    { label: 'Café & Bar', path: cafePath },
     ...(isMember
       ? [{ label: 'Book Court', path: '/member/book-court' }]
       : [{ label: 'Guest Booking', path: '/trial' }]),
@@ -84,7 +85,7 @@ export const Navbar = () => {
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center space-x-8 text-sm font-semibold tracking-wide text-gray-300">
           {navLinks.map((link) => {
-            const active = location.pathname === link.path;
+            const active = location.pathname === link.path || (link.label === 'Café & Bar' && (location.pathname === '/cafe' || location.pathname === '/member/cafe' || location.pathname === '/admin/cafe'));
             return (
               <Link
                 key={link.path}
@@ -100,7 +101,21 @@ export const Navbar = () => {
         </nav>
 
         {/* Right CTA / User Section */}
-        <div className="hidden sm:flex items-center space-x-4">
+        <div className="hidden sm:flex items-center space-x-3">
+          {isAdmin && (
+            <Link
+              to="/admin/dashboard"
+              className={`px-3.5 py-2 rounded-lg text-xs uppercase font-extrabold tracking-wider transition-all shadow-md flex items-center space-x-1.5 ${
+                location.pathname.startsWith('/admin')
+                  ? 'bg-neutral-800 text-white border border-neutral-700'
+                  : 'bg-champion-red hover:bg-champion-red-hover text-white shadow-red-950/40 hover:scale-102'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </Link>
+          )}
+
           {isAuthenticated && user ? (
             <div className="flex items-center space-x-3 bg-neutral-900/80 px-3.5 py-1.5 rounded-lg border border-neutral-800">
               <div className="flex flex-col items-end">
