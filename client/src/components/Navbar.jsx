@@ -39,7 +39,6 @@ export const Navbar = () => {
     { label: 'Court Availability', path: '/availability' },
     { label: 'Memberships', path: '/plans' },
     { label: 'Gear Shop', path: '/shop' },
-    { label: 'Contact & Trial', path: '/contact' },
   ];
 
   return (

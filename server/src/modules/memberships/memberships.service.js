@@ -71,6 +71,32 @@ export const registerNewMember = async ({ fullName, email, phone, password = 'Pa
   }
 };
 
+// Public signup creates a member account and profile without starting a paid plan.
+export const registerAccount = async ({ fullName, email, phone, password }) => {
+  if (!fullName || !email || !password) {
+    const error = new Error('Full name, email, and password are required');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  try {
+    return await membershipRepo.createMemberTransaction({
+      fullName,
+      email,
+      phone,
+      passwordHash,
+    });
+  } catch (err) {
+    if (err.code === '23505') {
+      const error = new Error('An account with this email address already exists');
+      error.statusCode = 409;
+      throw error;
+    }
+    throw err;
+  }
+};
+
 export const renewMembership = async (membershipId, months = 1) => {
   if (!membershipId) {
     const error = new Error('Membership ID is required');

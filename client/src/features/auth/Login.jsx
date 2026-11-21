@@ -29,7 +29,6 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [planTier, setPlanTier] = useState('2'); // default Silver tier ID
 
   // OTP Fields
   const [otpCode, setOtpCode] = useState('');
@@ -97,7 +96,6 @@ export const Login = () => {
         email,
         password,
         phone,
-        planId: parseInt(planTier, 10),
       });
       redirectByRole(newUser.role);
     } catch (err) {
@@ -289,7 +287,7 @@ export const Login = () => {
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">
               {mode === 'login' && 'Enter your club credentials to access your workspace.'}
-              {mode === 'signup' && 'Join Champions Club today to book courts and access pro gear.'}
+              {mode === 'signup' && 'Create your account now. You can choose a membership plan later.'}
               {mode === 'forgot' && 'Enter your registered email address to receive your 6-digit verification code.'}
               {mode === 'verify-otp' && `Enter the 6-digit code sent to ${email} and choose your new password.`}
             </p>
@@ -405,22 +403,6 @@ export const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 icon={Lock}
               />
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                  Select Starting Membership Tier
-                </label>
-                <select
-                  value={planTier}
-                  onChange={(e) => setPlanTier(e.target.value)}
-                  className="block w-full rounded border border-gray-300 py-2.5 px-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-champion-red focus:border-champion-red"
-                >
-                  <option value="1">Gold Tier VIP (₹9,999/mo - 100% Free Courts, 20% Shop Off)</option>
-                  <option value="2">Silver Standard (₹4,999/mo - 25% Court Rate, 10% Shop Off)</option>
-                  <option value="3">Junior Under-18 (₹2,999/mo - 50% Court Rate, 15% Shop Off)</option>
-                </select>
-              </div>
-
               <div className="pt-3">
                 <Button
                   type="submit"
@@ -429,7 +411,7 @@ export const Login = () => {
                   disabled={loading}
                   className="w-full flex items-center justify-center font-extrabold tracking-wider uppercase text-sm shadow-md"
                 >
-                  {loading ? 'Creating Membership...' : 'Complete Athlete Sign Up'}
+                  {loading ? 'Creating Account...' : 'Create Athlete Account'}
                   {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
                 </Button>
               </div>

@@ -133,8 +133,10 @@ export const createMemberTransaction = async ({ fullName, email, phone, password
     const user = userRes.rows[0];
 
     // 2. Fetch plan to construct member code
-    const planRes = await client.query('SELECT tier FROM membership_plans WHERE id = $1', [planId]);
-    const tier = planRes.rows[0]?.tier || 'MEMB';
+    const planRes = planId
+      ? await client.query('SELECT tier FROM membership_plans WHERE id = $1', [planId])
+      : { rows: [] };
+    const tier = planRes.rows[0]?.tier || 'MEMBER';
 
     // Random unique member code e.g. CC-GOLD-482
     const randomSuffix = Math.floor(100 + Math.random() * 900);
@@ -147,25 +149,27 @@ export const createMemberTransaction = async ({ fullName, email, phone, password
       [user.id, memberCode, dateOfBirth || null, emergencyContact || null, emergencyPhone || null, address || null]
     );
 
-    // 4. Calculate start and end date
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + parseInt(durationMonths, 10));
-
-    // 5. Insert membership record
-    const membershipRes = await client.query(
-      `INSERT INTO memberships (user_id, plan_id, start_date, end_date, status, auto_renew)
-       VALUES ($1, $2, $3, $4, 'ACTIVE', TRUE)
-       RETURNING id, plan_id, start_date, end_date, status;`,
-      [user.id, planId, startDate, endDate]
-    );
+    let membership = null;
+    if (planId) {
+      // 4. Create a membership only when a plan was selected.
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + parseInt(durationMonths, 10));
+      const membershipRes = await client.query(
+        `INSERT INTO memberships (user_id, plan_id, start_date, end_date, status, auto_renew)
+         VALUES ($1, $2, $3, $4, 'ACTIVE', TRUE)
+         RETURNING id, plan_id, start_date, end_date, status;`,
+        [user.id, planId, startDate, endDate]
+      );
+      membership = membershipRes.rows[0];
+    }
 
     await client.query('COMMIT');
 
     return {
       user,
       memberCode,
-      membership: membershipRes.rows[0],
+      membership,
     };
   } catch (err) {
     await client.query('ROLLBACK');

@@ -37,6 +37,15 @@ export const getBookings = async (req, res, next) => {
   }
 };
 
+export const getMyBookingHistory = async (req, res, next) => {
+  try {
+    const bookings = await bookingsService.listMyBookingHistory(req.user.id);
+    return successResponse(res, bookings, 'Your booking history retrieved successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const cancelBooking = async (req, res, next) => {
   try {
     const bookingId = parseInt(req.params.id, 10);

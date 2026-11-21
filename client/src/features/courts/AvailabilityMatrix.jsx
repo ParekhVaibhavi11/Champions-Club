@@ -291,7 +291,7 @@ export const AvailabilityMatrix = () => {
               Schedule Matrix for {selectedDate}
             </h3>
             <span className="text-xs text-gray-400 font-mono">
-              60-min sessions starting every 30 mins
+              One-hour booking slots
             </span>
           </div>
 

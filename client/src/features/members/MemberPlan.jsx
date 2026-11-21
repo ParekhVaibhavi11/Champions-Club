@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { membershipService } from '../../services/membershipService';
 import { Badge } from '../../components/Badge';
@@ -60,6 +60,18 @@ export const MemberPlan = () => {
     return (
       <div className="flex justify-center py-20">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-champion-red"></div>
+      </div>
+    );
+  }
+
+  if (!profile?.membership_id) {
+    return (
+      <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-gray-200 p-8 text-center shadow-sm">
+        <h1 className="text-2xl font-black text-champion-dark uppercase">No active membership</h1>
+        <p className="mt-2 text-sm text-gray-600">Your account is ready. Explore the available plans whenever you are ready to choose a membership.</p>
+        <Link to="/plans" className="inline-flex mt-6 bg-champion-red text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-lg hover:bg-champion-red-hover">
+          Explore Membership Plans
+        </Link>
       </div>
     );
   }

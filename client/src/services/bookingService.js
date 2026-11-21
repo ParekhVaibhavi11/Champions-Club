@@ -9,6 +9,9 @@ export const bookingService = {
     if (sportId) url += `&sport_id=${sportId}`;
     return await api.get(url);
   },
+  getMyBookingHistory: async () => {
+    return await api.get('/bookings/mine');
+  },
   cancelBooking: async (bookingId) => {
     return await api.patch(`/bookings/${bookingId}/cancel`);
   },

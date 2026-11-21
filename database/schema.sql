@@ -82,6 +82,20 @@ CREATE TABLE IF NOT EXISTS member_profiles (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Password-reset codes are single-use and expire after a short period.
+CREATE TABLE IF NOT EXISTS password_resets (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    otp_code VARCHAR(6) NOT NULL,
+    token VARCHAR(128) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_resets_user_used
+    ON password_resets(user_id, used);
+
 -- 4. MEMBERSHIP PLANS & BENEFITS
 CREATE TABLE IF NOT EXISTS membership_plans (
     id SERIAL PRIMARY KEY,
