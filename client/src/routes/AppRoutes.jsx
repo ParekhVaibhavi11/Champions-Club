@@ -8,6 +8,7 @@ import { AdminLayout } from '../layouts/AdminLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 
 import { Login } from '../features/auth/Login';
+import { ResetPassword } from '../features/auth/ResetPassword';
 import { Home } from '../features/public/Home';
 import { Plans } from '../features/public/Plans';
 import { MemberDashboard } from '../features/members/MemberDashboard';
@@ -24,6 +25,7 @@ export const AppRoutes = () => {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/plans" element={<Plans />} />
         {/* Placeholder pages to be filled in upcoming modules */}
         <Route path="/sports" element={<div className="p-8 text-center text-gray-600 font-bold">Sports facilities view (Module 3)</div>} />
