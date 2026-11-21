@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
-import { LayoutDashboard, Calendar, Users, ShoppingBag, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Calendar, Users, ShoppingBag, CreditCard, Coffee } from 'lucide-react';
 
 export const MemberLayout = ({ children }) => {
   const location = useLocation();
@@ -11,6 +11,7 @@ export const MemberLayout = ({ children }) => {
     { label: 'Digital Pass & Plan', path: '/member/membership', icon: CreditCard },
     { label: 'Book Court', path: '/member/book-court', icon: Calendar },
     { label: 'Friday Social Play', path: '/member/social-play', icon: Users },
+    { label: 'Café & Bar', path: '/member/cafe', icon: Coffee },
     { label: 'Gear Shop', path: '/shop', icon: ShoppingBag },
   ];
 
@@ -21,7 +22,7 @@ export const MemberLayout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 overflow-x-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const active = location.pathname === item.path;
+            const active = location.pathname === item.path || (item.path === '/member/cafe' && location.pathname === '/cafe');
             return (
               <Link
                 key={item.path}

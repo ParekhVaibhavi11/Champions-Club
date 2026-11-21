@@ -6,7 +6,7 @@ export const checkStaffSubPermission = (permissionKey) => {
       return errorResponse(res, 'Unauthorized.', 401);
     }
 
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'admin' || req.user.role === 'member') {
       return next();
     }
 

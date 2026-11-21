@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
@@ -40,20 +40,27 @@ export const Login = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, register } = useAuth();
+  const { login, register, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  useEffect(() => {
+    if (isAuthenticated && user?.role === 'admin') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
+
   const redirectByRole = (role) => {
+    if (role === 'admin') {
+      navigate('/admin/dashboard', { replace: true });
+      return;
+    }
     const from = location.state?.from?.pathname;
     if (from && from !== '/login') {
       navigate(from, { replace: true });
       return;
     }
     switch (role) {
-      case 'admin':
-        navigate('/admin/dashboard', { replace: true });
-        break;
       case 'front_desk':
         navigate('/desk/calendar', { replace: true });
         break;
