@@ -59,70 +59,47 @@ export const Home = () => {
     {
       tier: 'GOLD',
       title: 'Gold VIP Pass',
-      fee: '$120',
+      fee: '₹9,999',
       period: '/ month',
       popular: true,
       features: [
         '100% Free Court Bookings',
-        '20% Off Gear Shop Purchases',
-        '15% Off Fuel Café & Bar Tabs',
-        '10 Free Court Hours Included',
-        'Priority Friday Social Session Booking',
+        '20% Off Gear Shop Purchases (POS)',
+        '15% Off Fuel Café & Bar Running Tabs',
+        '10 Free Court Hours Monthly Included',
+        'Priority Access to Friday Social Sessions',
       ],
       cta: 'Join Gold Tier',
     },
     {
       tier: 'SILVER',
       title: 'Silver Standard',
-      fee: '$60',
+      fee: '₹4,999',
       period: '/ month',
       popular: false,
       features: [
         '25% Off Court Booking Rates',
-        '10% Off Gear Shop Purchases',
+        '10% Off Gear Shop Purchases (POS)',
         '10% Off Fuel Café & Bar Tabs',
-        '2 Free Court Hours Included',
-        'Access to Friday Social Play',
+        '2 Free Court Hours Monthly Included',
+        'Access to Friday Social Play Sessions',
       ],
       cta: 'Choose Silver',
     },
     {
       tier: 'JUNIOR',
       title: 'Junior Under-18',
-      fee: '$35',
+      fee: '₹2,999',
       period: '/ month',
       popular: false,
       features: [
         '50% Off Court Booking Rates',
-        '15% Off Gear Shop Purchases',
+        '15% Off Gear Shop Purchases (POS)',
         '10% Off Fuel Café & Bar Tabs',
         'Youth Academy Training Access',
-        'Guardian Account Linking',
+        'Guardian Account Linking & Safeguarding',
       ],
       cta: 'Sign Up Junior',
-    },
-  ];
-
-  const highlights = [
-    {
-      icon: Activity,
-      title: 'Zero Double-Bookings',
-      desc: 'PostgreSQL GiST exclusion locks guarantee mutual exclusion. No phone calls or lost reservations.',
-    },
-    {
-      icon: Users,
-      title: 'Friday Social Play',
-      desc: 'Weekly club social play sessions where members connect, rally, and compete in organized brackets.',
-    },
-    {
-      icon: ShoppingBag,
-      title: 'Pro Gear Shop POS',
-      desc: 'Live stock quantities visible online, with rapid checkout and member tier auto-discounts at the counter.',
-    },
-    {
-      icon: Coffee,
-      title: 'Fuel Café & Bar',
-      desc: 'Matchday nutrition, smoothies, and kitchen queue display tracking linked directly to your running table tab.',
     },
   ];
 
@@ -234,14 +211,14 @@ export const Home = () => {
           {sports.map((sport) => (
             <div 
               key={sport.id}
-              className="group relative rounded-2xl overflow-hidden bg-black shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between"
+              className="group relative rounded-2xl overflow-hidden bg-black shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between cursor-pointer"
             >
               <div 
                 className="h-72 bg-cover bg-center brightness-75 group-hover:scale-110 group-hover:brightness-90 transition-all duration-700"
                 style={{ backgroundImage: `url('${sport.image}')` }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent p-6 flex flex-col justify-end">
-                <span className="inline-block px-2.5 py-1 rounded bg-champion-red/90 text-white text-[10px] font-black uppercase tracking-wider self-start mb-2">
+                <span className="inline-block px-2.5 py-1 rounded bg-champion-red/90 text-white text-[10px] font-black uppercase tracking-wider self-start mb-2 shadow">
                   {sport.badge}
                 </span>
                 <h3 className="text-xl font-black text-white uppercase tracking-tight">{sport.name}</h3>
@@ -259,7 +236,7 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* 3. HOW THE USER FLOW WORKS (VISITOR TO CHAMPION) */}
+      {/* 3. HOW THE USER FLOW WORKS */}
       <section className="bg-white py-20 border-y border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
@@ -275,7 +252,7 @@ export const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 relative">
+            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
               <div className="w-10 h-10 rounded-xl bg-champion-dark text-white font-black text-sm flex items-center justify-center mb-4">
                 01
               </div>
@@ -285,7 +262,7 @@ export const Home = () => {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 relative">
+            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
               <div className="w-10 h-10 rounded-xl bg-champion-red text-white font-black text-sm flex items-center justify-center mb-4">
                 02
               </div>
@@ -295,7 +272,7 @@ export const Home = () => {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 relative">
+            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
               <div className="w-10 h-10 rounded-xl bg-champion-dark text-white font-black text-sm flex items-center justify-center mb-4">
                 03
               </div>
@@ -305,7 +282,7 @@ export const Home = () => {
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 relative">
+            <div className="p-6 rounded-2xl bg-champion-grey border border-gray-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
               <div className="w-10 h-10 rounded-xl bg-champion-red text-white font-black text-sm flex items-center justify-center mb-4">
                 04
               </div>
@@ -318,28 +295,28 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* 4. MEMBERSHIP TIERS COMPARISON */}
+      {/* 4. MEMBERSHIP TIERS COMPARISON (IN RUPEES ₹ WITH HOVER POPUP EFFECT) */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="text-xs font-extrabold text-champion-red uppercase tracking-widest">
             Elevate Your Game
           </span>
           <h2 className="mt-2 text-3xl sm:text-5xl font-black text-champion-dark uppercase tracking-tight">
-            Membership Plans
+            Membership Plans (₹ INR)
           </h2>
           <p className="mt-3 text-sm text-gray-600 font-medium">
-            Unlock exclusive court discounts, retail shop benefits, and access to Friday Social sessions.
+            Hover over cards to see tier entitlements. Billed in Indian Rupees with automatic discount computation.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch pt-4 pb-6">
           {plans.map((plan) => (
             <div
               key={plan.tier}
-              className={`rounded-2xl p-8 flex flex-col justify-between transition-all duration-300 ${
+              className={`rounded-3xl p-8 flex flex-col justify-between cursor-pointer transition-all duration-300 ease-out transform hover:-translate-y-3 hover:shadow-2xl ${
                 plan.popular
-                  ? 'bg-champion-dark text-white shadow-2xl ring-2 ring-champion-red scale-105 z-10'
-                  : 'bg-white text-champion-dark border border-gray-200 shadow-md'
+                  ? 'bg-champion-dark text-white shadow-xl ring-2 ring-champion-red md:scale-105 z-10 hover:ring-4 hover:ring-amber-500'
+                  : 'bg-white text-champion-dark border-2 border-gray-200 shadow-md hover:border-champion-dark hover:shadow-xl'
               }`}
             >
               <div>
@@ -359,7 +336,7 @@ export const Home = () => {
                 <h3 className="text-2xl font-black uppercase tracking-tight">{plan.title}</h3>
                 
                 <div className="mt-4 flex items-baseline">
-                  <span className="text-4xl sm:text-5xl font-black">{plan.fee}</span>
+                  <span className="text-4xl sm:text-5xl font-black text-champion-red">{plan.fee}</span>
                   <span className={`ml-2 text-xs font-bold uppercase tracking-wider ${
                     plan.popular ? 'text-gray-400' : 'text-gray-500'
                   }`}>
@@ -371,7 +348,7 @@ export const Home = () => {
                   {plan.features.map((feat, idx) => (
                     <li key={idx} className="flex items-center">
                       <Check className={`w-4 h-4 mr-2.5 flex-shrink-0 ${
-                        plan.popular ? 'text-champion-red' : 'text-emerald-600'
+                        plan.popular ? 'text-amber-400' : 'text-emerald-600'
                       }`} />
                       <span className={plan.popular ? 'text-gray-200' : 'text-gray-700'}>{feat}</span>
                     </li>
@@ -382,7 +359,7 @@ export const Home = () => {
               <div className="mt-8 pt-6 border-t border-gray-200/20">
                 <Link
                   to="/contact"
-                  className={`w-full py-3.5 rounded-xl text-center text-xs font-extrabold uppercase tracking-wider block transition-all shadow-md ${
+                  className={`w-full py-4 rounded-xl text-center text-xs font-extrabold uppercase tracking-wider block transition-all shadow-md hover:scale-[1.02] ${
                     plan.popular
                       ? 'bg-champion-red hover:bg-champion-red-hover text-white shadow-red-950/50'
                       : 'bg-champion-dark hover:bg-black text-white'
