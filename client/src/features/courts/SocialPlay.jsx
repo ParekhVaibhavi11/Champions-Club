@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { bookingService } from '../../services/bookingService';
 import { useAuth } from '../../hooks/useAuth';
 import { Users, Calendar, Clock, Trophy, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -17,7 +18,7 @@ export const SocialPlay = () => {
     try {
       setLoading(true);
       const res = await bookingService.getSocialSessions();
-      setSessions(res.data.data || []);
+      setSessions(res.data || []);
     } catch (err) {
       console.error('Error fetching social sessions:', err);
       setError('Unable to load upcoming Friday Social sessions.');
@@ -36,11 +37,11 @@ export const SocialPlay = () => {
       setError(null);
       setMessage(null);
       const res = await bookingService.registerSocialSession(sessionId);
-      setMessage(res.data.message || 'Successfully joined Friday Social Play!');
+      setMessage(res.message || 'Successfully joined Friday Social Play!');
       await fetchSessions();
     } catch (err) {
       console.error('Registration error:', err);
-      setError(err.response?.data?.message || 'Failed to register for this session.');
+      setError(err.message || 'Failed to register for this session.');
     } finally {
       setRegistering(null);
     }
@@ -91,20 +92,20 @@ export const SocialPlay = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {sessions.map((session) => {
-            const dateObj = new Date(session.session_date);
+            const dateObj = new Date(session.start_at);
             const dateStr = dateObj.toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'short',
               day: 'numeric',
             });
-            const slotsLeft = session.max_capacity - session.participant_count;
+            const slotsLeft = session.capacity - session.registered_count;
             const isFull = slotsLeft <= 0;
-            const fillPercent = Math.min(100, Math.round((session.participant_count / session.max_capacity) * 100));
+            const fillPercent = Math.min(100, Math.round((session.registered_count / session.capacity) * 100));
 
             return (
               <div
-                key={session.id}
+                key={session.session_id}
                 className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden"
               >
                 <div className="space-y-4">
@@ -132,7 +133,7 @@ export const SocialPlay = () => {
                     <div className="flex items-center space-x-2 text-gray-600">
                       <Clock className="w-4 h-4 text-champion-blue" />
                       <span className="font-medium">
-                        {session.start_time.slice(0, 5)} - {session.end_time.slice(0, 5)}
+                        {new Date(session.start_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
@@ -145,7 +146,7 @@ export const SocialPlay = () => {
                         <span>Roster Capacity</span>
                       </span>
                       <span className="font-semibold text-gray-700">
-                        {session.participant_count} / {session.max_capacity} Players
+                        {session.registered_count} / {session.capacity} Players
                       </span>
                     </div>
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -167,14 +168,20 @@ export const SocialPlay = () => {
                   <div className="text-xs text-gray-400">
                     Free entry for club members
                   </div>
-                  <Button
-                    variant="primary"
-                    disabled={isFull || registering === session.id}
-                    onClick={() => handleRegister(session.id)}
-                    className="px-5 py-2 text-xs"
-                  >
-                    {registering === session.id ? 'Joining...' : isFull ? 'Full' : 'Join Friday Play'}
-                  </Button>
+                  {user?.membership_id ? (
+                    <Button
+                      variant="primary"
+                      disabled={isFull || registering === session.session_id}
+                      onClick={() => handleRegister(session.session_id)}
+                      className="px-5 py-2 text-xs"
+                    >
+                      {registering === session.session_id ? 'Joining...' : isFull ? 'Full' : 'Join Friday Play'}
+                    </Button>
+                  ) : (
+                    <Link to="/plans" className="rounded-lg bg-champion-red px-4 py-2 text-xs font-bold text-white hover:bg-champion-red-hover">
+                      Membership required
+                    </Link>
+                  )}
                 </div>
               </div>
             );

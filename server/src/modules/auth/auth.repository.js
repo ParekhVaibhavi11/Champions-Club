@@ -23,7 +23,7 @@ export const findUserByEmail = async (email) => {
     FROM users u
     LEFT JOIN staff_profiles sp ON u.id = sp.user_id
     LEFT JOIN member_profiles mp ON u.id = mp.user_id
-    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE'
+    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE' AND m.end_date >= CURRENT_DATE
     LEFT JOIN membership_plans mp_plan ON m.plan_id = mp_plan.id
     WHERE LOWER(u.email) = LOWER($1)
     LIMIT 1;
@@ -55,7 +55,7 @@ export const findUserById = async (id) => {
     FROM users u
     LEFT JOIN staff_profiles sp ON u.id = sp.user_id
     LEFT JOIN member_profiles mp ON u.id = mp.user_id
-    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE'
+    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE' AND m.end_date >= CURRENT_DATE
     LEFT JOIN membership_plans mp_plan ON m.plan_id = mp_plan.id
     WHERE u.id = $1
     LIMIT 1;

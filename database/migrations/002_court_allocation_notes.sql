@@ -1,0 +1,2 @@
+ALTER TABLE court_allocations
+ADD COLUMN IF NOT EXISTS notes TEXT;

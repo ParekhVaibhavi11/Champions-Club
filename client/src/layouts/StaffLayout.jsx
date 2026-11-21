@@ -2,16 +2,24 @@ import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { ShoppingCart, Boxes, Coffee, UtensilsCrossed } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 export const StaffLayout = () => {
+  const { user } = useAuth();
   const location = useLocation();
 
-  const navItems = [
+  const allNavItems = [
     { label: 'Gear Shop POS', path: '/staff/shop-pos', icon: ShoppingCart },
     { label: 'Inventory Ledger', path: '/staff/inventory', icon: Boxes },
     { label: 'Café Tables & Tabs POS', path: '/staff/cafe-pos', icon: Coffee },
     { label: 'Kitchen Queue (KDS)', path: '/staff/kitchen', icon: UtensilsCrossed },
   ];
+  const navItems = user?.role === 'admin' ? allNavItems : allNavItems.filter((item) => {
+    if (user?.staff_department === 'shop') return item.path === '/staff/shop-pos' || item.path === '/staff/inventory';
+    if (user?.staff_department === 'cafe') return item.path === '/staff/cafe-pos';
+    if (user?.staff_department === 'kitchen') return item.path === '/staff/kitchen';
+    return false;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-champion-grey">

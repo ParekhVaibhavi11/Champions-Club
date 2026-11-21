@@ -24,6 +24,14 @@ import { FrontDeskCalendar } from '../features/frontdesk/FrontDeskCalendar';
 import { MemberDirectory } from '../features/frontdesk/MemberDirectory';
 import { ShopPOS } from '../features/shop/ShopPOS';
 import { AdminDashboard } from '../features/finance/AdminDashboard';
+import { CourtManagement } from '../features/courts/CourtManagement';
+import { InventoryManager } from '../features/shop/InventoryManager';
+import { CafePOS } from '../features/cafe/CafePOS';
+import { KitchenQueue } from '../features/cafe/KitchenQueue';
+import { ShopCatalog } from '../features/shop/ShopCatalog';
+import { AdminFinance } from '../features/finance/AdminFinance';
+import { AdminHr } from '../features/finance/AdminHr';
+import { ShopPageLayout } from '../layouts/ShopPageLayout';
 
 export const AppRoutes = () => {
   return (
@@ -42,6 +50,8 @@ export const AppRoutes = () => {
         <Route path="/trial/status" element={<TrialStatus />} />
         <Route path="/contact" element={<TrialRequest />} />
       </Route>
+
+      <Route path="/shop" element={<ShopPageLayout><ShopCatalog /></ShopPageLayout>} />
 
       {/* Member Routes */}
       <Route
@@ -82,9 +92,9 @@ export const AppRoutes = () => {
         }
       >
         <Route path="shop-pos" element={<ShopPOS />} />
-        <Route path="inventory" element={<div className="p-8 text-center text-gray-600 font-bold">Staff Inventory Ledger (Module 6)</div>} />
-        <Route path="cafe-pos" element={<div className="p-8 text-center text-gray-600 font-bold">Café Tables & Tabs POS (Module 7)</div>} />
-        <Route path="kitchen" element={<div className="p-8 text-center text-gray-600 font-bold">Kitchen Queue Display (Module 7)</div>} />
+        <Route path="inventory" element={<InventoryManager />} />
+        <Route path="cafe-pos" element={<CafePOS />} />
+        <Route path="kitchen" element={<KitchenQueue />} />
       </Route>
 
       {/* Admin Routes */}
@@ -97,8 +107,9 @@ export const AppRoutes = () => {
         }
       >
         <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="finance" element={<div className="p-8 text-center text-gray-600 font-bold">Finance, Invoices & Reports (Module 11)</div>} />
-        <Route path="hr" element={<div className="p-8 text-center text-gray-600 font-bold">Staff HR & Shifts (Module 9)</div>} />
+        <Route path="courts" element={<CourtManagement />} />
+        <Route path="finance" element={<AdminFinance />} />
+        <Route path="hr" element={<AdminHr />} />
       </Route>
 
       {/* Catch-all */}

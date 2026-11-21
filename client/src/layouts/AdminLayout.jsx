@@ -1,13 +1,14 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
-import { BarChart3, DollarSign, UserCheck } from 'lucide-react';
+import { BarChart3, DollarSign, UserCheck, Map } from 'lucide-react';
 
 export const AdminLayout = () => {
   const location = useLocation();
 
   const navItems = [
     { label: 'Owner KPIs & Overview', path: '/admin/dashboard', icon: BarChart3 },
+    { label: 'Court Management', path: '/admin/courts', icon: Map },
     { label: 'Finance & Invoices', path: '/admin/finance', icon: DollarSign },
     { label: 'Staff HR & Shifts', path: '/admin/hr', icon: UserCheck },
   ];

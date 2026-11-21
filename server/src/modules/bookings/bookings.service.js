@@ -24,10 +24,10 @@ export const createBooking = async ({
     throw error;
   }
 
-  // 1. Validate 30-minute interval alignment
+  // 1. Validate hourly slot alignment to match the one-hour booking grid.
   const minutes = start.getMinutes();
-  if (minutes !== 0 && minutes !== 30) {
-    const error = new Error('Bookings must start on the hour (:00) or half-hour (:30).');
+  if (minutes !== 0) {
+    const error = new Error('Bookings must start on the hour.');
     error.statusCode = 400;
     throw error;
   }
@@ -67,15 +67,14 @@ export const createBooking = async ({
 
   if (memberId) {
     const member = await authRepo.findUserById(memberId);
-    const courtDiscountPct = parseFloat(member?.court_discount_pct || 0);
-
-    if (courtDiscountPct >= 100) {
-      feeCharged = 0.00; // Gold VIP tier = 100% Free
-    } else if (courtDiscountPct > 0) {
-      const memberBaseRate = parseFloat(court.hourly_rate_member);
-      feeCharged = memberBaseRate * (1 - courtDiscountPct / 100);
-    } else {
-      feeCharged = parseFloat(court.hourly_rate_member);
+    if (member?.membership_id) {
+      const courtDiscountPct = parseFloat(member.court_discount_pct || 0);
+      if (courtDiscountPct >= 100) {
+        feeCharged = 0.00;
+      } else {
+        const memberBaseRate = parseFloat(court.hourly_rate_member);
+        feeCharged = memberBaseRate * (1 - courtDiscountPct / 100);
+      }
     }
   }
 
@@ -102,9 +101,13 @@ export const listBookings = async (dateStr, sportId = null, user = null) => {
   return await bookingsRepo.getBookingsByDate(queryDate, sportId, memberId);
 };
 
+export const listMyBookingHistory = async (userId) => {
+  return await bookingsRepo.getMemberBookingHistory(userId);
+};
+
 export const cancelBooking = async (bookingId, user) => {
-  // Front Desk and Admin can cancel any booking; Members can only cancel their own
-  const cancelled = await bookingsRepo.cancelBookingAllocation(bookingId);
+  const memberId = ['front_desk', 'admin'].includes(user?.role) ? null : user?.id;
+  const cancelled = await bookingsRepo.cancelBookingAllocation(bookingId, memberId);
   if (!cancelled) {
     const error = new Error('Booking not found or already cancelled');
     error.statusCode = 404;
@@ -131,6 +134,12 @@ export const joinSocialSession = async (sessionId, memberId) => {
   if (!memberId) {
     const error = new Error('You must be a member to join Friday Social Sessions');
     error.statusCode = 401;
+    throw error;
+  }
+  const member = await authRepo.findUserById(memberId);
+  if (!member?.membership_id) {
+    const error = new Error('An active membership is required to join Friday Social Play.');
+    error.statusCode = 403;
     throw error;
   }
   return await bookingsRepo.registerSocialMember(sessionId, memberId);

@@ -2,8 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import * as authRepo from './auth.repository.js';
-import { registerNewMember } from '../memberships/memberships.service.js';
-import { getAllPlans } from '../memberships/memberships.repository.js';
+import { registerAccount } from '../memberships/memberships.service.js';
 import { sendPasswordResetOTP } from '../../utils/emailService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'champions_club_secret_key_2026';
@@ -58,27 +57,18 @@ export const login = async (email, password) => {
   };
 };
 
-export const register = async ({ fullName, email, password, phone, planId }) => {
+export const register = async ({ fullName, email, password, phone }) => {
   if (!fullName || !email || !password) {
     const error = new Error('Full name, email, and password are required');
     error.statusCode = 400;
     throw error;
   }
 
-  let targetPlanId = planId;
-  if (!targetPlanId) {
-    const plans = await getAllPlans();
-    const defaultPlan = plans.find(p => p.tier === 'SILVER') || plans[0];
-    targetPlanId = defaultPlan?.id || 1;
-  }
-
-  const created = await registerNewMember({
+  await registerAccount({
     fullName,
     email,
     phone,
     password,
-    planId: targetPlanId,
-    durationMonths: 1,
   });
 
   return await login(email, password);

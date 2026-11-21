@@ -6,6 +6,9 @@ import membershipRoutes from './modules/memberships/memberships.routes.js';
 import courtRoutes from './modules/courts/courts.routes.js';
 import bookingRoutes from './modules/bookings/bookings.routes.js';
 import trialsRoutes from './modules/trials/trials.routes.js';
+import shopRoutes from './modules/shop/shop.routes.js';
+import cafeRoutes from './modules/cafe/cafe.routes.js';
+import adminRoutes from './modules/admin/admin.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import pool from './config/db.js';
 
@@ -41,6 +44,9 @@ app.use('/api/v1', membershipRoutes); // /api/v1/plans, /api/v1/members, /api/v1
 app.use('/api/v1', courtRoutes);      // /api/v1/sports, /api/v1/courts, /api/v1/courts/availability
 app.use('/api/v1', bookingRoutes);    // /api/v1/bookings, /api/v1/social-sessions
 app.use('/api/v1', trialsRoutes);     // /api/v1/trials, /api/v1/leads
+app.use('/api/v1', shopRoutes);
+app.use('/api/v1', cafeRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Central Error Handler
 app.use(errorHandler);

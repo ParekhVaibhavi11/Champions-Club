@@ -138,6 +138,7 @@ export const MemberBookingFlow = () => {
   // Pricing calculation
   const getCalculatedPrice = () => {
     if (!currentCourt) return 0;
+    if (!user?.membership_id) return parseFloat(currentCourt.hourly_rate_guest);
     const baseMemberRate = parseFloat(currentCourt.hourly_rate_member);
     const discountPct = parseFloat(user?.court_discount_pct || 0);
 
@@ -359,7 +360,7 @@ export const MemberBookingFlow = () => {
                 onClick={handleBookingSubmit}
                 className="font-black uppercase tracking-wider text-xs px-8 py-4 shadow-lg shadow-red-950/60"
               >
-                {bookingLoading ? 'Enforcing GiST Lock...' : 'Confirm & Reserve Court'}
+                {bookingLoading ? 'Reserving Court...' : 'Reserve Court'}
               </Button>
             </div>
           </div>

@@ -101,6 +101,7 @@ export const getBookingsByDate = async (dateStr, sportId = null, memberId = null
       ca.court_id,
       ca.status as allocation_status,
       ca.type as allocation_type,
+      ss.title as event_title,
       lower(ca.slot_range) as start_at,
       upper(ca.slot_range) as end_at,
       c.name as court_name,
@@ -112,13 +113,14 @@ export const getBookingsByDate = async (dateStr, sportId = null, memberId = null
       u.phone as member_phone,
       mp.member_code,
       mp_plan.tier as member_tier
-    FROM bookings b
-    JOIN court_allocations ca ON b.allocation_id = ca.id
+    FROM court_allocations ca
+    LEFT JOIN bookings b ON b.allocation_id = ca.id
+    LEFT JOIN social_sessions ss ON ss.allocation_id = ca.id
     JOIN courts c ON ca.court_id = c.id
     JOIN sports s ON c.sport_id = s.id
     LEFT JOIN users u ON b.member_id = u.id
     LEFT JOIN member_profiles mp ON u.id = mp.user_id
-    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE'
+    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE' AND m.end_date >= CURRENT_DATE
     LEFT JOIN membership_plans mp_plan ON m.plan_id = mp_plan.id
     WHERE ca.status != 'CANCELLED'
       AND (lower(ca.slot_range) AT TIME ZONE 'Asia/Kolkata')::DATE = $1::DATE
@@ -141,17 +143,45 @@ export const getBookingsByDate = async (dateStr, sportId = null, memberId = null
   return result.rows;
 };
 
+export const getMemberBookingHistory = async (memberId) => {
+  const query = `
+    SELECT
+      b.id AS booking_id,
+      b.allocation_id,
+      b.fee_charged,
+      b.payment_status,
+      b.notes,
+      b.created_at,
+      ca.status AS allocation_status,
+      lower(ca.slot_range) AS start_at,
+      upper(ca.slot_range) AS end_at,
+      c.name AS court_name,
+      s.name AS sport_name
+    FROM bookings b
+    JOIN court_allocations ca ON b.allocation_id = ca.id
+    JOIN courts c ON ca.court_id = c.id
+    JOIN sports s ON c.sport_id = s.id
+    WHERE b.member_id = $1
+    ORDER BY lower(ca.slot_range) DESC, b.id DESC;
+  `;
+  const result = await pool.query(query, [memberId]);
+  return result.rows;
+};
+
 /**
  * Cancels a booking by setting its court_allocation status to 'CANCELLED'.
  */
-export const cancelBookingAllocation = async (bookingId) => {
+export const cancelBookingAllocation = async (bookingId, memberId = null) => {
   const query = `
     UPDATE court_allocations
     SET status = 'CANCELLED'
-    WHERE id = (SELECT allocation_id FROM bookings WHERE id = $1)
+    WHERE id = (
+      SELECT allocation_id FROM bookings
+      WHERE id = $1 AND ($2::INT IS NULL OR member_id = $2)
+    ) AND status = 'CONFIRMED'
     RETURNING id, status;
   `;
-  const result = await pool.query(query, [bookingId]);
+  const result = await pool.query(query, [bookingId, memberId]);
   return result.rows[0];
 };
 
