@@ -398,7 +398,7 @@ export const Home = () => {
         </div>
       </section>
 
-      {/* 6. LOCATION & CONTACT / TRIAL ACTION */}
+      {/* 6. LOCATION & CONTACT / GUEST BOOKING ACTION */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="bg-white rounded-3xl border border-gray-200 p-8 sm:p-12 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
           <div>
@@ -406,10 +406,10 @@ export const Home = () => {
               Experience Champions Club
             </span>
             <h2 className="text-3xl sm:text-4xl font-black text-champion-dark uppercase tracking-tight mt-1">
-              Ready for a Trial Session?
+              Book a Guest Session or Demo
             </h2>
             <p className="text-sm text-gray-500 mt-2 max-w-lg">
-              Book a free court assessment or schedule a guided facility tour with our front desk managers today.
+              Reserve a 60-minute non-member court session or schedule a guided facility tour with our front desk managers today.
             </p>
             <div className="mt-4 flex flex-wrap gap-4 text-xs font-semibold text-gray-600">
               <span className="flex items-center"><MapPin className="w-4 h-4 mr-1 text-champion-red" /> Central Sports Hub, Arena 1</span>
@@ -417,11 +417,11 @@ export const Home = () => {
             </div>
           </div>
           <Link
-            to="/contact"
+            to="/trial"
             className="inline-flex items-center bg-champion-dark hover:bg-black text-white text-xs sm:text-sm font-extrabold uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg transition-all hover:scale-105"
           >
             <PhoneCall className="w-4 h-4 mr-2 text-champion-red" />
-            <span>Request Trial Inquiry</span>
+            <span>Book Guest Session</span>
           </Link>
         </div>
       </section>
