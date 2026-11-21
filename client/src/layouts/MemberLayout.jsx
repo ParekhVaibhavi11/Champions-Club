@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import { LayoutDashboard, Calendar, Users, ShoppingBag, CreditCard } from 'lucide-react';
 
-export const MemberLayout = () => {
+export const MemberLayout = ({ children }) => {
   const location = useLocation();
 
   const navItems = [
@@ -40,7 +40,7 @@ export const MemberLayout = () => {
         </div>
       </div>
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        <Outlet />
+        {children || <Outlet />}
       </main>
     </div>
   );

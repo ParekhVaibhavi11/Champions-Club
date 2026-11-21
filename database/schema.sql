@@ -155,6 +155,7 @@ CREATE TABLE IF NOT EXISTS court_allocations (
     slot_range TSTZRANGE NOT NULL,
     type allocation_type NOT NULL,
     status allocation_status NOT NULL DEFAULT 'CONFIRMED',
+    notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     -- Guaranteed collision-free constraint across all event types
     CONSTRAINT no_court_overlap EXCLUDE USING gist (

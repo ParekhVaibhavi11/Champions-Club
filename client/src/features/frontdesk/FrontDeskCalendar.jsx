@@ -58,9 +58,9 @@ export const FrontDeskCalendar = () => {
         courtService.getCourts(),
         bookingService.getBookings(selectedDate),
       ]);
-      setSports(sportsRes.data.data || []);
-      setCourts(courtsRes.data.data || []);
-      setBookings(bookingsRes.data.data || []);
+      setSports(sportsRes.data || []);
+      setCourts(courtsRes.data || []);
+      setBookings(bookingsRes.data || []);
     } catch (err) {
       console.error('Error loading calendar data:', err);
       setNotification({ type: 'error', text: 'Failed to load master calendar data.' });
@@ -87,7 +87,7 @@ export const FrontDeskCalendar = () => {
       setNotification({ type: 'success', text: 'Member checked in successfully!' });
       await loadData();
     } catch (err) {
-      setNotification({ type: 'error', text: err.response?.data?.message || 'Check-in failed.' });
+      setNotification({ type: 'error', text: err.message || 'Check-in failed.' });
     } finally {
       setActionLoading(false);
     }
@@ -102,7 +102,7 @@ export const FrontDeskCalendar = () => {
       setNotification({ type: 'success', text: 'Booking cancelled. Court slot is now open.' });
       await loadData();
     } catch (err) {
-      setNotification({ type: 'error', text: err.response?.data?.message || 'Cancellation failed.' });
+      setNotification({ type: 'error', text: err.message || 'Cancellation failed.' });
     } finally {
       setActionLoading(false);
     }
@@ -117,7 +117,7 @@ export const FrontDeskCalendar = () => {
     }
     try {
       const res = await membershipService.getMembers(query);
-      setMemberResults(res.data.data || []);
+      setMemberResults(res.data || []);
     } catch (err) {
       console.error(err);
     }
@@ -142,16 +142,12 @@ export const FrontDeskCalendar = () => {
     e.preventDefault();
     setModalError(null);
 
-    const startHour = parseInt(modalTime.split(':')[0], 10);
-    const endHour = startHour + 1;
-    const endTime = `${String(endHour).padStart(2, '0')}:00:00`;
-
     const payload = {
       court_id: modalCourt.id,
-      booking_date: selectedDate,
-      start_time: modalTime,
-      end_time: endTime,
-      user_id: isGuest ? null : selectedMember?.id,
+      start_time: new Date(`${selectedDate}T${modalTime.slice(0, 5)}:00+05:30`).toISOString(),
+      member_id: isGuest ? null : selectedMember?.user_id,
+      guest_name: isGuest ? guestName.trim() : null,
+      guest_phone: isGuest ? guestPhone.trim() : null,
       notes: isGuest ? `Walk-in Guest: ${guestName} (${guestPhone})` : `Front Desk Walk-in`,
     };
 
@@ -172,7 +168,7 @@ export const FrontDeskCalendar = () => {
       setNotification({ type: 'success', text: 'Walk-in booking reserved successfully!' });
       await loadData();
     } catch (err) {
-      setModalError(err.response?.data?.message || 'Failed to reserve walk-in booking.');
+      setModalError(err.message || 'Failed to reserve walk-in booking.');
     } finally {
       setActionLoading(false);
     }
@@ -267,7 +263,7 @@ export const FrontDeskCalendar = () => {
                       <div className="flex items-center justify-between">
                         <span>{court.name}</span>
                         <span className="text-[10px] font-semibold text-gray-400 normal-case">
-                          ₹{court.hourly_rate_inr}/hr
+                          ₹{court.hourly_rate_guest}/hr
                         </span>
                       </div>
                     </th>
@@ -293,11 +289,12 @@ export const FrontDeskCalendar = () => {
                         const booking = bookings.find((b) => {
                           if (b.court_id !== court.id) return false;
                           // Check if time slot falls within start_time and end_time
-                          return b.start_time <= timeStr && b.end_time > timeStr;
+                          const bookingTime = new Date(b.start_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false });
+                          return bookingTime === timeStr.slice(0, 5);
                         });
 
-                        const isConfirmed = booking?.status === 'CONFIRMED';
-                        const isCheckedIn = booking?.checked_in;
+                        const isConfirmed = booking?.allocation_status === 'CONFIRMED' && Boolean(booking.booking_id);
+                        const isCheckedIn = booking?.allocation_status === 'CHECKED_IN';
 
                         return (
                           <td
@@ -317,21 +314,21 @@ export const FrontDeskCalendar = () => {
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-black text-xs truncate">
-                                      {booking.full_name || 'Walk-in Guest'}
+                                      {booking.allocation_type === 'MAINTENANCE' ? 'Maintenance' : booking.allocation_type === 'SOCIAL_PLAY' ? (booking.event_title || 'Social Play') : (booking.member_name || booking.guest_name || 'Walk-in Guest')}
                                     </span>
                                     <Badge
                                       variant={
                                         isCheckedIn ? 'success' : isConfirmed ? 'primary' : 'neutral'
                                       }
                                     >
-                                      {isCheckedIn ? 'Checked-In' : booking.status}
+                                      {isCheckedIn ? 'Checked-In' : booking.allocation_status}
                                     </Badge>
                                   </div>
                                   <div className="text-[10px] text-gray-500 mt-0.5 truncate">
-                                    {booking.member_code ? `ID: ${booking.member_code}` : booking.notes}
+                                    {booking.member_code ? `ID: ${booking.member_code}` : `${booking.guest_phone || ''} ${booking.notes || ''}`}
                                   </div>
                                   <div className="text-[10px] font-bold text-gray-600 mt-1">
-                                    Paid: ₹{booking.rate_charged_inr}
+                                    Paid: ₹{booking.fee_charged}
                                   </div>
                                 </div>
 
@@ -341,7 +338,7 @@ export const FrontDeskCalendar = () => {
                                     {!isCheckedIn && (
                                       <button
                                         disabled={actionLoading}
-                                        onClick={() => handleCheckIn(booking.id)}
+                                        onClick={() => handleCheckIn(booking.booking_id)}
                                         className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md py-1 text-[10px] font-bold flex items-center justify-center space-x-1"
                                         title="Mark Checked-In"
                                       >
@@ -351,7 +348,7 @@ export const FrontDeskCalendar = () => {
                                     )}
                                     <button
                                       disabled={actionLoading}
-                                      onClick={() => handleCancel(booking.id)}
+                                      onClick={() => handleCancel(booking.booking_id)}
                                       className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
                                       title="Cancel Reservation"
                                     >
@@ -451,7 +448,7 @@ export const FrontDeskCalendar = () => {
                     <div className="max-h-40 overflow-y-auto border rounded-xl divide-y bg-gray-50">
                       {memberResults.map((m) => (
                         <div
-                          key={m.id}
+                          key={m.user_id}
                           onClick={() => {
                             setSelectedMember(m);
                             setMemberResults([]);
@@ -518,7 +515,7 @@ export const FrontDeskCalendar = () => {
               <div className="bg-gray-50 p-3 rounded-xl border flex justify-between items-center">
                 <span className="text-gray-500 font-medium">Standard Court Rate:</span>
                 <span className="font-black text-gray-800 text-sm">
-                  ₹{modalCourt?.hourly_rate_inr}
+                  ₹{modalCourt?.hourly_rate_guest}
                 </span>
               </div>
 
