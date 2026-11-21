@@ -1,9 +1,68 @@
 import * as service from './admin.service.js';
-import { successResponse } from '../../utils/apiResponse.js';
 import * as hrService from './hr.service.js';
 
-export const summary = async (req, res, next) => { try { return successResponse(res, await service.getSummary(), 'Admin dashboard summary retrieved'); } catch (err) { next(err); } };
-export const revenue = async (req, res, next) => { try { return successResponse(res, await service.getRevenue(req.query.from, req.query.to), 'Department revenue retrieved'); } catch (err) { next(err); } };
-export const ledger = async (req, res, next) => { try { return successResponse(res, await service.getLedger(req.query.from, req.query.to), 'Finance ledger retrieved'); } catch (err) { next(err); } };
-export const hrOverview = async (req, res, next) => { try { return successResponse(res, await hrService.getOverview(), 'HR overview retrieved'); } catch (err) { next(err); } };
-export const reviewLeave = async (req, res, next) => { try { return successResponse(res, await hrService.reviewLeave(req.params.id, req.body.status, req.user.id), 'Leave request reviewed'); } catch (err) { next(err); } };
+import { successResponse } from '../../utils/apiResponse.js';
+
+export const summary = async (req, res, next) => {
+    try {
+        return successResponse(
+            res,
+            await service.getSummary(),
+            'Admin dashboard summary retrieved'
+        );
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const revenue = async (req, res, next) => {
+    try {
+        return successResponse(
+            res,
+            await service.getRevenue(req.query.from, req.query.to),
+            'Department revenue retrieved'
+        );
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const ledger = async (req, res, next) => {
+    try {
+        return successResponse(
+            res,
+            await service.getLedger(req.query.from, req.query.to),
+            'Finance ledger retrieved'
+        );
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const hrOverview = async (req, res, next) => {
+    try {
+        return successResponse(
+            res,
+            await hrService.getOverview(),
+            'HR overview retrieved'
+        );
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const reviewLeave = async (req, res, next) => {
+    try {
+        return successResponse(
+            res,
+            await hrService.reviewLeave(
+                req.params.id,
+                req.body.status,
+                req.user.id
+            ),
+            'Leave request reviewed'
+        );
+    } catch (err) {
+        next(err);
+    }
+};

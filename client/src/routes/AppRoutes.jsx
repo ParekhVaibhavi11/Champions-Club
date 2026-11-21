@@ -17,6 +17,9 @@ import { MemberBookingFlow } from '../features/courts/MemberBookingFlow';
 import { SocialPlay } from '../features/courts/SocialPlay';
 import { MemberDashboard } from '../features/members/MemberDashboard';
 import { MemberPlan } from '../features/members/MemberPlan';
+import { TrialRequest } from '../features/public/TrialRequest';
+import { TrialStatus } from '../features/public/TrialStatus';
+import { LeadPipeline } from '../features/frontdesk/LeadPipeline';
 import { FrontDeskCalendar } from '../features/frontdesk/FrontDeskCalendar';
 import { MemberDirectory } from '../features/frontdesk/MemberDirectory';
 import { ShopPOS } from '../features/shop/ShopPOS';
@@ -42,7 +45,10 @@ export const AppRoutes = () => {
         <Route path="/sports" element={<SportsShowcase />} />
         <Route path="/availability" element={<AvailabilityMatrix />} />
         {/* Placeholder pages to be filled in upcoming modules */}
-        <Route path="/contact" element={<div className="p-8 text-center text-gray-600 font-bold">Inquiries & CRM Lead Form (Module 8)</div>} />
+        <Route path="/shop" element={<div className="p-8 text-center text-gray-600 font-bold">Public Gear Shop Catalog (Module 5)</div>} />
+        <Route path="/trial" element={<TrialRequest />} />
+        <Route path="/trial/status" element={<TrialStatus />} />
+        <Route path="/contact" element={<TrialRequest />} />
       </Route>
 
       <Route path="/shop" element={<ShopPageLayout><ShopCatalog /></ShopPageLayout>} />
@@ -73,7 +79,7 @@ export const AppRoutes = () => {
       >
         <Route path="calendar" element={<FrontDeskCalendar />} />
         <Route path="members" element={<MemberDirectory />} />
-        <Route path="leads" element={<div className="p-8 text-center text-gray-600 font-bold">CRM Leads Pipeline (Module 8)</div>} />
+        <Route path="leads" element={<LeadPipeline />} />
       </Route>
 
       {/* Staff Routes */}
