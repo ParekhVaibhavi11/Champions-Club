@@ -34,12 +34,16 @@ export const Navbar = () => {
     return 'default';
   };
 
+  const isMember = isAuthenticated && user?.role === 'member';
+
   const navLinks = [
     { label: 'Sports Arenas', path: '/sports' },
     { label: 'Court Availability', path: '/availability' },
     { label: 'Memberships', path: '/plans' },
     { label: 'Gear Shop', path: '/shop' },
-    { label: 'Contact & Trial', path: '/contact' },
+    ...(isMember
+      ? [{ label: 'Book Court', path: '/member/book-court' }]
+      : [{ label: 'Guest Booking', path: '/trial' }]),
   ];
 
   return (
