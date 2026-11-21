@@ -2,13 +2,24 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from './Badge';
-import { LogOut, Menu, X, ArrowRight, User } from 'lucide-react';
+import { LogOut, Menu, X, ArrowRight, ArrowLeft } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isHome = location.pathname === '/';
+
+  const handleBack = () => {
+    // If there is browser history, go back; otherwise navigate to root
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -35,20 +46,34 @@ export const Navbar = () => {
     <header className="bg-champion-dark/95 backdrop-blur-md text-white border-b border-neutral-800 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
         
-        {/* Brand Logo */}
-        <Link to="/" className="flex items-center space-x-3 group" onClick={() => setMobileMenuOpen(false)}>
-          <div className="w-9 h-9 sm:w-11 sm:h-11 bg-champion-red rounded-lg flex items-center justify-center font-black text-lg sm:text-xl tracking-tighter text-white shadow-lg group-hover:scale-105 transition-all">
-            CC
-          </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold tracking-wider text-sm sm:text-lg text-white uppercase leading-none">
-              Champions<span className="text-champion-red">Club</span>
-            </span>
-            <span className="text-[9px] sm:text-[11px] text-gray-400 tracking-widest uppercase mt-0.5 font-medium">
-              Elite Sports Complex
-            </span>
-          </div>
-        </Link>
+        {/* Left Side: Back Arrow Button (on subpages) + Brand Logo */}
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          {!isHome && (
+            <button
+              onClick={handleBack}
+              title="Go Back"
+              className="p-2 sm:p-2.5 rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-gray-300 hover:text-white transition-all shadow-sm active:scale-95 flex items-center group"
+              aria-label="Go Back"
+            >
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-champion-red transition-colors" />
+            </button>
+          )}
+
+          {/* Brand Logo */}
+          <Link to="/" className="flex items-center space-x-3 group" onClick={() => setMobileMenuOpen(false)}>
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-champion-red rounded-lg flex items-center justify-center font-black text-lg sm:text-xl tracking-tighter text-white shadow-lg group-hover:scale-105 transition-all">
+              CC
+            </div>
+            <div className="flex flex-col">
+              <span className="font-extrabold tracking-wider text-sm sm:text-lg text-white uppercase leading-none">
+                Champions<span className="text-champion-red">Club</span>
+              </span>
+              <span className="text-[9px] sm:text-[11px] text-gray-400 tracking-widest uppercase mt-0.5 font-medium">
+                Elite Sports Complex
+              </span>
+            </div>
+          </Link>
+        </div>
 
         {/* Desktop Navigation */}
         <nav className="hidden lg:flex items-center space-x-8 text-sm font-semibold tracking-wide text-gray-300">
