@@ -11,6 +11,10 @@ import { Login } from '../features/auth/Login';
 import { ResetPassword } from '../features/auth/ResetPassword';
 import { Home } from '../features/public/Home';
 import { Plans } from '../features/public/Plans';
+import { SportsShowcase } from '../features/courts/SportsShowcase';
+import { AvailabilityMatrix } from '../features/courts/AvailabilityMatrix';
+import { MemberBookingFlow } from '../features/courts/MemberBookingFlow';
+import { SocialPlay } from '../features/courts/SocialPlay';
 import { MemberDashboard } from '../features/members/MemberDashboard';
 import { MemberPlan } from '../features/members/MemberPlan';
 import { FrontDeskCalendar } from '../features/frontdesk/FrontDeskCalendar';
@@ -27,9 +31,9 @@ export const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/plans" element={<Plans />} />
+        <Route path="/sports" element={<SportsShowcase />} />
+        <Route path="/availability" element={<AvailabilityMatrix />} />
         {/* Placeholder pages to be filled in upcoming modules */}
-        <Route path="/sports" element={<div className="p-8 text-center text-gray-600 font-bold">Sports facilities view (Module 3)</div>} />
-        <Route path="/availability" element={<div className="p-8 text-center text-gray-600 font-bold">Live Court Availability Matrix (Module 3)</div>} />
         <Route path="/shop" element={<div className="p-8 text-center text-gray-600 font-bold">Public Gear Shop Catalog (Module 5)</div>} />
         <Route path="/contact" element={<div className="p-8 text-center text-gray-600 font-bold">Inquiries & CRM Lead Form (Module 8)</div>} />
       </Route>
@@ -45,8 +49,8 @@ export const AppRoutes = () => {
       >
         <Route path="dashboard" element={<MemberDashboard />} />
         <Route path="membership" element={<MemberPlan />} />
-        <Route path="book-court" element={<div className="p-8 text-center text-gray-600 font-bold">Member Court Booking View (Module 4)</div>} />
-        <Route path="social-play" element={<div className="p-8 text-center text-gray-600 font-bold">Friday Social Play Roster (Module 4)</div>} />
+        <Route path="book-court" element={<MemberBookingFlow />} />
+        <Route path="social-play" element={<SocialPlay />} />
       </Route>
 
       {/* Front Desk Routes */}
