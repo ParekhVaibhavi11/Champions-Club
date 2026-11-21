@@ -1,0 +1,9 @@
+import React, { useEffect, useState } from 'react';
+import { shopService } from '../../services/shopService';
+
+export const ShopCatalog = () => {
+  const [products, setProducts] = useState([]);
+  const [error, setError] = useState('');
+  useEffect(() => { shopService.getProducts().then((res) => setProducts(res.data || [])).catch((err) => setError(err.message)); }, []);
+  return <div className="space-y-6"><header className="rounded-2xl bg-champion-dark p-8 text-white"><h1 className="text-3xl font-black uppercase">Club Gear Shop</h1><p className="mt-2 text-sm text-gray-300">Browse live availability. Purchases are completed in person at the club counter.</p></header>{error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{products.map((product) => <article key={product.id} className="rounded-2xl border bg-white p-5 shadow-sm"><p className="text-xs font-bold uppercase text-gray-400">{product.category_name} · {product.sku}</p><h2 className="mt-2 font-black text-champion-dark">{product.name}</h2><p className="mt-2 text-sm text-gray-500">{product.description}</p><div className="mt-4 flex items-center justify-between"><span className="font-black">₹{Number(product.retail_price).toFixed(2)}</span><span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase ${product.stock_quantity === 0 ? 'bg-red-100 text-red-700' : product.stock_quantity <= product.low_stock_threshold ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>{product.stock_quantity === 0 ? 'Out of stock' : product.stock_quantity <= product.low_stock_threshold ? `Low stock · ${product.stock_quantity}` : `In stock · ${product.stock_quantity}`}</span></div><p className="mt-4 border-t pt-3 text-xs font-bold text-gray-500">Available in-store only</p></article>)}</div></div>;
+};

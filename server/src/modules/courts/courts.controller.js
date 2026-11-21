@@ -20,6 +20,10 @@ export const getCourts = async (req, res, next) => {
   }
 };
 
+export const getManageCourts = async (req, res, next) => {
+  try { return successResponse(res, await courtsService.listCourtsForManagement(), 'Courts retrieved for management'); } catch (err) { next(err); }
+};
+
 export const getCourtById = async (req, res, next) => {
   try {
     const courtId = parseInt(req.params.id, 10);
@@ -39,4 +43,16 @@ export const getAvailability = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+export const createCourt = async (req, res, next) => {
+  try { return successResponse(res, await courtsService.createCourt(req.body), 'Court created', 201); } catch (err) { next(err); }
+};
+
+export const updateCourt = async (req, res, next) => {
+  try { return successResponse(res, await courtsService.updateCourt(req.params.id, req.body), 'Court updated'); } catch (err) { next(err); }
+};
+
+export const createMaintenanceBlock = async (req, res, next) => {
+  try { return successResponse(res, await courtsService.createMaintenanceBlock(req.params.id, req.body), 'Maintenance block created', 201); } catch (err) { next(err); }
 };

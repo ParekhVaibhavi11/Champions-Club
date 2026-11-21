@@ -56,7 +56,7 @@ export const searchMembers = async (search = '') => {
       p.cafe_discount_pct
     FROM users u
     JOIN member_profiles mp ON u.id = mp.user_id
-    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE'
+    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE' AND m.end_date >= CURRENT_DATE
     LEFT JOIN membership_plans p ON m.plan_id = p.id
     WHERE u.role = 'member'
   `;
@@ -109,7 +109,7 @@ export const getMemberDetailsById = async (userId) => {
       p.free_court_hours_per_month
     FROM users u
     JOIN member_profiles mp ON u.id = mp.user_id
-    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE'
+    LEFT JOIN memberships m ON u.id = m.user_id AND m.status = 'ACTIVE' AND m.end_date >= CURRENT_DATE
     LEFT JOIN membership_plans p ON m.plan_id = p.id
     WHERE u.id = $1
     LIMIT 1;
