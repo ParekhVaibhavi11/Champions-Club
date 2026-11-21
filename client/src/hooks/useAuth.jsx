@@ -44,6 +44,16 @@ export const AuthProvider = ({ children }) => {
     return newUser;
   };
 
+  const register = async (userData) => {
+    const res = await authService.register(userData);
+    const { token: newToken, user: newUser } = res.data;
+    setToken(newToken);
+    setUser(newUser);
+    localStorage.setItem('cc_token', newToken);
+    localStorage.setItem('cc_user', JSON.stringify(newUser));
+    return newUser;
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -52,7 +62,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

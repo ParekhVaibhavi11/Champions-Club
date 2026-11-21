@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './modules/auth/auth.routes.js';
+import membershipRoutes from './modules/memberships/memberships.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import pool from './config/db.js';
 
@@ -33,6 +34,7 @@ app.get('/api/health', async (req, res) => {
 
 // Mount V1 API Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1', membershipRoutes); // Mounts /api/v1/plans, /api/v1/members, /api/v1/memberships
 
 // Central Error Handler
 app.use(errorHandler);
