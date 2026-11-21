@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { membershipService } from '../../services/membershipService';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -15,7 +16,8 @@ import {
   Calendar, 
   X,
   CreditCard,
-  Check
+  Check,
+  ArrowLeft
 } from 'lucide-react';
 
 export const MemberDirectory = () => {
@@ -23,6 +25,7 @@ export const MemberDirectory = () => {
   const [plans, setPlans] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   
   // Modals state
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
@@ -118,6 +121,17 @@ export const MemberDirectory = () => {
   return (
     <div className="space-y-6">
       
+      {/* Back Link Breadcrumb */}
+      <div>
+        <button
+          onClick={() => navigate('/desk/calendar')}
+          className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-champion-red uppercase tracking-wider transition-colors group p-1.5 -ml-1.5 rounded-lg hover:bg-gray-200/60"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          <span>Back to Master Calendar</span>
+        </button>
+      </div>
+
       {/* Header Bar */}
       <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -315,7 +329,7 @@ export const MemberDirectory = () => {
                   >
                     {plans.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.name} (${parseFloat(p.monthly_fee).toFixed(0)}/mo)
+                        {p.name} (₹{parseInt(p.monthly_fee, 10).toLocaleString('en-IN')}/mo)
                       </option>
                     ))}
                   </select>

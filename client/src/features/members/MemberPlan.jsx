@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { membershipService } from '../../services/membershipService';
 import { Badge } from '../../components/Badge';
@@ -13,7 +14,8 @@ import {
   Coffee, 
   QrCode, 
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft
 } from 'lucide-react';
 
 export const MemberPlan = () => {
@@ -22,6 +24,7 @@ export const MemberPlan = () => {
   const [loading, setLoading] = useState(true);
   const [renewing, setRenewing] = useState(false);
   const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   const fetchProfile = async () => {
     try {
@@ -36,7 +39,7 @@ export const MemberPlan = () => {
 
   useEffect(() => {
     if (user?.id) fetchProfile();
-  }, [user]);
+  },[]);
 
   const handleRenew = async (months) => {
     if (!profile?.membership_id) return;
@@ -67,6 +70,17 @@ export const MemberPlan = () => {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       
+      {/* Back Link Breadcrumb */}
+      <div>
+        <button
+          onClick={() => navigate('/member/dashboard')}
+          className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-champion-red uppercase tracking-wider transition-colors group p-1.5 -ml-1.5 rounded-lg hover:bg-gray-200/60"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          <span>Back to Member Overview</span>
+        </button>
+      </div>
+
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
