@@ -39,7 +39,7 @@ export const MemberPlan = () => {
 
   useEffect(() => {
     if (user?.id) fetchProfile();
-  }, [user]);
+  },[]);
 
   const handleRenew = async (months) => {
     if (!profile?.membership_id) return;
