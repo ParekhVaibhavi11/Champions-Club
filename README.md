@@ -1,48 +1,58 @@
 # Champions Club
 
-Basic minimal setup: React + Vite on the frontend and Node.js + Express + PostgreSQL on the backend.
+Basic minimal setup as defined in the Implementation Plan:
+- `client/`: React + Vite
+- `server/`: Node.js + Express (ESM) + PostgreSQL database connection
 
-## 📁 Structure
+---
+
+## 📁 Monorepo File Tree
 
 ```text
-Champions-Club/
-├── backend/
-│   ├── .env              # Database connection config
-│   ├── .env.example
-│   ├── db.js             # PostgreSQL connection pool
+champions-club/
+├── client/                      # React + Vite
+│   ├── index.html
 │   ├── package.json
-│   └── server.js         # Express server & DB test route
+│   ├── vite.config.js
+│   └── src/
+│       ├── App.jsx              # Tests backend /api/health DB connection
+│       ├── index.css
+│       └── main.jsx
 │
-└── frontend/
-    ├── index.html
-    ├── package.json
-    ├── vite.config.js
-    └── src/
-        ├── App.jsx       # Simple React view checking DB connection
-        ├── index.css
-        └── main.jsx
+├── server/                      # Express + PostgreSQL
+│   ├── .env                     # DB credentials (PGHOST, PGDATABASE, etc.)
+│   ├── .env.example
+│   ├── package.json
+│   └── src/
+│       ├── server.js            # Express app & /api/health endpoint
+│       └── config/
+│           └── db.js            # pg.Pool database connection
+│
+├── .gitignore
+└── README.md
 ```
 
 ---
 
 ## 🚀 How to Run
 
-### 1. Backend
+### 1. Server (Backend)
 
 ```bash
-cd backend
+cd server
 npm install
 npm run dev
 ```
 
-Server starts on `http://localhost:5000`. Test endpoint: `http://localhost:5000/api/health`.
+API runs at `http://localhost:5000`.  
+Health & DB test endpoint: `http://localhost:5000/api/health`
 
-### 2. Frontend
+### 2. Client (Frontend)
 
 ```bash
-cd frontend
+cd client
 npm install
 npm run dev
 ```
 
-Vite dev server starts on `http://localhost:5173`.
+Client runs at `http://localhost:5173`.
