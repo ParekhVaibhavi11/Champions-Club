@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from './Badge';
-import { LogOut, Menu, X, ArrowRight, ArrowLeft } from 'lucide-react';
+import { LogOut, Menu, X, ArrowRight, ArrowLeft, LayoutDashboard } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -11,6 +11,7 @@ export const Navbar = () => {
   const location = useLocation();
 
   const isHome = location.pathname === '/';
+  const isAdmin = isAuthenticated && user?.role === 'admin';
 
   const handleBack = () => {
     // If there is browser history, go back; otherwise navigate to root
@@ -39,6 +40,7 @@ export const Navbar = () => {
     { label: 'Court Availability', path: '/availability' },
     { label: 'Memberships', path: '/plans' },
     { label: 'Gear Shop', path: '/shop' },
+    ...(isAdmin ? [{ label: 'Dashboard', path: '/admin/dashboard' }] : []),
   ];
 
   return (
@@ -99,7 +101,7 @@ export const Navbar = () => {
               <div className="flex flex-col items-end">
                 <span className="text-xs font-bold text-white leading-tight">{user.full_name}</span>
                 <div className="flex items-center space-x-1.5 mt-0.5">
-                  <Badge variant={user.membership_tier ? getTierVariant(user.membership_tier) : 'staff'}>
+                  <Badge variant={user.membership_tier ? getTierVariant(user.membership_tier) : (user.role === 'admin' ? 'admin' : 'staff')}>
                     {user.membership_tier ? `${user.membership_tier} MEMBER` : user.role.toUpperCase()}
                   </Badge>
                 </div>
@@ -153,10 +155,21 @@ export const Navbar = () => {
                 <p className="text-sm font-bold text-white">{user.full_name}</p>
                 <p className="text-[11px] text-gray-400 font-mono mt-0.5">{user.email}</p>
               </div>
-              <Badge variant={user.membership_tier ? getTierVariant(user.membership_tier) : 'staff'}>
+              <Badge variant={user.membership_tier ? getTierVariant(user.membership_tier) : (user.role === 'admin' ? 'admin' : 'staff')}>
                 {user.membership_tier || user.role}
               </Badge>
             </div>
+          )}
+
+          {isAdmin && (
+            <Link
+              to="/admin/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className="w-full flex items-center justify-center space-x-2 bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-extrabold tracking-wider py-2.5 rounded-lg shadow-md mb-2"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Admin Dashboard</span>
+            </Link>
           )}
 
           <div className="space-y-1">
