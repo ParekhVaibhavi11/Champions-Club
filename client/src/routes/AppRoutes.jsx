@@ -9,8 +9,11 @@ import { ProtectedRoute } from './ProtectedRoute';
 
 import { Login } from '../features/auth/Login';
 import { Home } from '../features/public/Home';
+import { Plans } from '../features/public/Plans';
 import { MemberDashboard } from '../features/members/MemberDashboard';
+import { MemberPlan } from '../features/members/MemberPlan';
 import { FrontDeskCalendar } from '../features/frontdesk/FrontDeskCalendar';
+import { MemberDirectory } from '../features/frontdesk/MemberDirectory';
 import { ShopPOS } from '../features/shop/ShopPOS';
 import { AdminDashboard } from '../features/finance/AdminDashboard';
 
@@ -21,10 +24,10 @@ export const AppRoutes = () => {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        {/* Placeholder pages to be filled in modules */}
+        <Route path="/plans" element={<Plans />} />
+        {/* Placeholder pages to be filled in upcoming modules */}
         <Route path="/sports" element={<div className="p-8 text-center text-gray-600 font-bold">Sports facilities view (Module 3)</div>} />
         <Route path="/availability" element={<div className="p-8 text-center text-gray-600 font-bold">Live Court Availability Matrix (Module 3)</div>} />
-        <Route path="/plans" element={<div className="p-8 text-center text-gray-600 font-bold">Membership Plans Comparison (Module 2)</div>} />
         <Route path="/shop" element={<div className="p-8 text-center text-gray-600 font-bold">Public Gear Shop Catalog (Module 5)</div>} />
         <Route path="/contact" element={<div className="p-8 text-center text-gray-600 font-bold">Inquiries & CRM Lead Form (Module 8)</div>} />
       </Route>
@@ -39,6 +42,7 @@ export const AppRoutes = () => {
         }
       >
         <Route path="dashboard" element={<MemberDashboard />} />
+        <Route path="membership" element={<MemberPlan />} />
         <Route path="book-court" element={<div className="p-8 text-center text-gray-600 font-bold">Member Court Booking View (Module 4)</div>} />
         <Route path="social-play" element={<div className="p-8 text-center text-gray-600 font-bold">Friday Social Play Roster (Module 4)</div>} />
       </Route>
@@ -53,7 +57,7 @@ export const AppRoutes = () => {
         }
       >
         <Route path="calendar" element={<FrontDeskCalendar />} />
-        <Route path="members" element={<div className="p-8 text-center text-gray-600 font-bold">Member Directory & Renewals (Module 2)</div>} />
+        <Route path="members" element={<MemberDirectory />} />
         <Route path="leads" element={<div className="p-8 text-center text-gray-600 font-bold">CRM Leads Pipeline (Module 8)</div>} />
       </Route>
 
