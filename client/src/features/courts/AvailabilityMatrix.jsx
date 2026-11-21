@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import { courtService } from '../../services/courtService';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -20,6 +21,15 @@ import {
 export const AvailabilityMatrix = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+
+  const hasMembership = isAuthenticated && Boolean(
+    user?.membership_tier || 
+    user?.membership_status === 'ACTIVE' || 
+    user?.membership_id ||
+    user?.role === 'member' ||
+    user?.role === 'admin'
+  );
 
   const [sports, setSports] = useState([]);
   const [courts, setCourts] = useState([]);
@@ -137,15 +147,17 @@ export const AvailabilityMatrix = () => {
             </p>
           </div>
 
-          <div className="flex items-center space-x-3">
-            <Link
-              to="/login"
-              className="bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-extrabold tracking-wider px-5 py-3 rounded-xl shadow-md transition-all flex items-center"
-            >
-              <span>Sign In to Book</span>
-              <ArrowRight className="w-4 h-4 ml-1.5" />
-            </Link>
-          </div>
+          {!hasMembership && (
+            <div className="flex items-center space-x-3">
+              <Link
+                to="/login"
+                className="bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-extrabold tracking-wider px-5 py-3 rounded-xl shadow-md transition-all flex items-center"
+              >
+                <span>Sign In to Book</span>
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* FILTER BAR CONTAINER */}
