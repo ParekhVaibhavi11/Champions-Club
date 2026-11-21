@@ -1,17 +1,47 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { authService } from '../../services/authService';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
-import { Mail, Lock, ArrowRight, UserCheck, Flame, ArrowLeft, Shield } from 'lucide-react';
+import { 
+  Mail, 
+  Lock, 
+  ArrowRight, 
+  UserCheck, 
+  Flame, 
+  ArrowLeft, 
+  Shield, 
+  User, 
+  Phone,
+  KeyRound,
+  CheckCircle,
+  HelpCircle,
+  Hash
+} from 'lucide-react';
 
 export const Login = () => {
+  // Mode: 'login' | 'signup' | 'forgot' | 'verify-otp'
+  const [mode, setMode] = useState('login');
+
+  // Form Fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [planTier, setPlanTier] = useState('2'); // default Silver tier ID
+
+  // OTP Fields
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Status
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -39,9 +69,10 @@ export const Login = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleLoginSubmit = async (e) => {
     e?.preventDefault();
     setError('');
+    setSuccessMsg('');
     setLoading(true);
 
     try {
@@ -54,10 +85,81 @@ export const Login = () => {
     }
   };
 
+  const handleSignupSubmit = async (e) => {
+    e?.preventDefault();
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
+
+    try {
+      const newUser = await register({
+        fullName,
+        email,
+        password,
+        phone,
+        planId: parseInt(planTier, 10),
+      });
+      redirectByRole(newUser.role);
+    } catch (err) {
+      setError(err.message || 'Sign up failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e) => {
+    e?.preventDefault();
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
+
+    try {
+      const res = await authService.forgotPassword(email);
+      setSuccessMsg(res.message || '6-digit verification code sent to your email!');
+      setMode('verify-otp');
+    } catch (err) {
+      setError(err.message || 'Request failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetWithOtpSubmit = async (e) => {
+    e?.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authService.resetPasswordWithOTP(email, otpCode, newPassword);
+      setSuccessMsg(res.message || 'Password reset successful! Please sign in with your new password.');
+      setMode('login');
+      setPassword('');
+      setOtpCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(err.message || 'Verification failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDemoLogin = async (demoEmail) => {
     setEmail(demoEmail);
     setPassword('Password123!');
     setError('');
+    setSuccessMsg('');
     setLoading(true);
 
     try {
@@ -81,7 +183,7 @@ export const Login = () => {
   return (
     <div className="min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-5rem)] flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden bg-champion-dark">
       
-      {/* Background athlete texture */}
+      {/* Background texture */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center opacity-20 pointer-events-none filter blur-[1px]"
         style={{
@@ -90,10 +192,10 @@ export const Login = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-champion-dark via-champion-dark/90 to-transparent pointer-events-none" />
 
-      {/* Main Responsive Container */}
-      <div className="relative z-10 w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch shadow-2xl rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-900/90 backdrop-blur-xl">
+      {/* Main Container */}
+      <div className="relative z-10 w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch shadow-2xl rounded-3xl overflow-hidden border border-neutral-800 bg-neutral-900/90 backdrop-blur-xl">
         
-        {/* Left Side: Brand & Quick Demo Access */}
+        {/* Left Panel: Brand & Quick Demo Access */}
         <div className="lg:col-span-5 bg-black/60 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-neutral-800">
           <div>
             <Link to="/" className="inline-flex items-center text-xs font-semibold text-gray-400 hover:text-white mb-6 transition-colors">
@@ -113,7 +215,7 @@ export const Login = () => {
             </div>
 
             <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-              Select any pre-configured demo account below to test specific permissions, role views, and workflows.
+              Use your credentials or 1-click test any role below with active seed permissions.
             </p>
 
             <div className="space-y-2">
@@ -152,61 +254,299 @@ export const Login = () => {
           </div>
         </div>
 
-        {/* Right Side: Manual Credential Login */}
+        {/* Right Panel: Interactive Form */}
         <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-center bg-white">
+          
+          {/* Navigation Switcher */}
+          <div className="flex items-center space-x-2 p-1 bg-gray-100 rounded-xl mb-6">
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
+              className={`flex-1 py-2 text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+                mode === 'login' ? 'bg-champion-dark text-white shadow-sm' : 'text-gray-500 hover:text-champion-dark'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('signup'); setError(''); setSuccessMsg(''); }}
+              className={`flex-1 py-2 text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all ${
+                mode === 'signup' ? 'bg-champion-red text-white shadow-sm' : 'text-gray-500 hover:text-champion-dark'
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {/* Form Header */}
           <div className="mb-6">
             <h2 className="text-2xl sm:text-3xl font-black text-champion-dark uppercase tracking-tight">
-              Sign In
+              {mode === 'login' && 'Sign In to Portal'}
+              {mode === 'signup' && 'Create Athlete Account'}
+              {mode === 'forgot' && 'Forgot Password'}
+              {mode === 'verify-otp' && 'Enter 6-Digit Code'}
             </h2>
             <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">
-              Enter your club credentials to access your dashboard.
+              {mode === 'login' && 'Enter your club credentials to access your workspace.'}
+              {mode === 'signup' && 'Join Champions Club today to book courts and access pro gear.'}
+              {mode === 'forgot' && 'Enter your registered email address to receive your 6-digit verification code.'}
+              {mode === 'verify-otp' && `Enter the 6-digit code sent to ${email} and choose your new password.`}
             </p>
           </div>
 
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-700 flex items-center">
-              <span className="font-bold mr-1">Error:</span> {error}
+            <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700 flex items-center">
+              <span className="font-black mr-1.5">Error:</span> {error}
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <Input
-              label="Email Address"
-              type="email"
-              required
-              placeholder="e.g. owner@championsclub.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              icon={Mail}
-            />
-
-            <Input
-              label="Password"
-              type="password"
-              required
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              icon={Lock}
-            />
-
-            <div className="pt-3">
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                disabled={loading}
-                className="w-full flex items-center justify-center font-extrabold tracking-wider uppercase text-sm shadow-md"
-              >
-                {loading ? 'Validating Token...' : 'Enter Champions Portal'}
-                {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
-              </Button>
+          {successMsg && (
+            <div className="mb-5 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 flex items-start">
+              <CheckCircle className="w-5 h-5 mr-2 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-emerald-900 font-extrabold">{successMsg}</p>
+                <p className="text-emerald-700 font-normal mt-0.5">
+                  Check your Gmail inbox or spam folder for your 6-digit reset code.
+                </p>
+              </div>
             </div>
-          </form>
+          )}
 
-          <p className="mt-6 text-center text-xs text-gray-400">
-            For new athlete memberships or court reservations, please see Front Desk or click any quick role chip on the left.
-          </p>
+          {/* 1. LOGIN FORM */}
+          {mode === 'login' && (
+            <form className="space-y-4" onSubmit={handleLoginSubmit}>
+              <Input
+                label="Email Address"
+                type="email"
+                required
+                placeholder="athlete@championsclub.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                icon={Mail}
+              />
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    Password <span className="text-champion-red">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => { setMode('forgot'); setError(''); setSuccessMsg(''); }}
+                    className="text-xs font-bold text-champion-red hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+                <Input
+                  type="password"
+                  required
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  icon={Lock}
+                />
+              </div>
+
+              <div className="pt-3">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center font-extrabold tracking-wider uppercase text-sm shadow-md"
+                >
+                  {loading ? 'Authenticating...' : 'Sign In to Portal'}
+                  {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* 2. SIGN UP FORM */}
+          {mode === 'signup' && (
+            <form className="space-y-4" onSubmit={handleSignupSubmit}>
+              <Input
+                label="Full Name"
+                required
+                placeholder="e.g. Ananya Sen"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                icon={User}
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Email Address"
+                  type="email"
+                  required
+                  placeholder="ananya@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  icon={Mail}
+                />
+
+                <Input
+                  label="Phone Number"
+                  placeholder="+91 98765 43210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  icon={Phone}
+                />
+              </div>
+
+              <Input
+                label="Create Password"
+                type="password"
+                required
+                placeholder="At least 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                icon={Lock}
+              />
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  Select Starting Membership Tier
+                </label>
+                <select
+                  value={planTier}
+                  onChange={(e) => setPlanTier(e.target.value)}
+                  className="block w-full rounded border border-gray-300 py-2.5 px-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-champion-red focus:border-champion-red"
+                >
+                  <option value="1">Gold Tier VIP (₹9,999/mo - 100% Free Courts, 20% Shop Off)</option>
+                  <option value="2">Silver Standard (₹4,999/mo - 25% Court Rate, 10% Shop Off)</option>
+                  <option value="3">Junior Under-18 (₹2,999/mo - 50% Court Rate, 15% Shop Off)</option>
+                </select>
+              </div>
+
+              <div className="pt-3">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center font-extrabold tracking-wider uppercase text-sm shadow-md"
+                >
+                  {loading ? 'Creating Membership...' : 'Complete Athlete Sign Up'}
+                  {!loading && <ArrowRight className="w-4 h-4 ml-2" />}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {/* 3. FORGOT PASSWORD (REQUEST CODE) */}
+          {mode === 'forgot' && (
+            <form className="space-y-4" onSubmit={handleForgotSubmit}>
+              <Input
+                label="Registered Email Address"
+                type="email"
+                required
+                placeholder="athlete@championsclub.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                icon={Mail}
+              />
+
+              <div className="pt-3 space-y-3">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center font-extrabold tracking-wider uppercase text-sm shadow-md"
+                >
+                  {loading ? 'Sending Code...' : 'Send 6-Digit Code to Gmail'}
+                  <KeyRound className="w-4 h-4 ml-2" />
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
+                  className="w-full py-2.5 text-xs font-bold text-gray-500 hover:text-champion-dark text-center"
+                >
+                  Remembered your password? Back to Sign In
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* 4. VERIFY OTP & RESET PASSWORD */}
+          {mode === 'verify-otp' && (
+            <form className="space-y-4" onSubmit={handleResetWithOtpSubmit}>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                  6-Digit Verification Code <span className="text-champion-red">*</span>
+                </label>
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <Hash className="h-5 w-5" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    className="block w-full rounded border border-gray-300 pl-10 px-3 py-2.5 text-base font-mono font-bold tracking-widest text-champion-dark focus:outline-none focus:ring-1 focus:ring-champion-red focus:border-champion-red"
+                  />
+                </div>
+              </div>
+
+              <Input
+                label="New Password"
+                type="password"
+                required
+                placeholder="At least 6 characters"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                icon={Lock}
+              />
+
+              <Input
+                label="Confirm New Password"
+                type="password"
+                required
+                placeholder="Repeat new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                icon={Lock}
+              />
+
+              <div className="pt-3 space-y-3">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  disabled={loading}
+                  className="w-full flex items-center justify-center font-extrabold tracking-wider uppercase text-sm shadow-md"
+                >
+                  {loading ? 'Verifying & Saving...' : 'Confirm & Update Password'}
+                  <CheckCircle className="w-4 h-4 ml-2" />
+                </Button>
+
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => { setMode('forgot'); setError(''); }}
+                    className="text-champion-red hover:underline"
+                  >
+                    Resend Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
+                    className="text-gray-500 hover:text-champion-dark"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+
         </div>
 
       </div>
