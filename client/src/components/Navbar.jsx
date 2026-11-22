@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from './Badge';
 import { LogOut, Menu, X, ArrowRight, LayoutDashboard } from 'lucide-react';
+import { hasActiveMembership } from '../utils/membership';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -11,8 +12,8 @@ export const Navbar = () => {
   const location = useLocation();
 
   const isAdmin = isAuthenticated && user?.role === 'admin';
-  const isMember = isAuthenticated && (user?.role === 'member' || Boolean(user?.membership_tier) || Boolean(user?.membership_id));
-  const isMemberOrAdmin = isMember || isAdmin;
+  const isMember = isAuthenticated && user?.role === 'member';
+  const hasActivePlan = hasActiveMembership(user, isAuthenticated);
   const cafePath = isAdmin ? '/admin/cafe' : (isMember ? '/member/cafe' : '/cafe');
 
   const handleLogout = () => {
@@ -34,7 +35,7 @@ export const Navbar = () => {
     { label: 'Memberships', path: '/plans' },
     { label: 'Gear Shop', path: '/shop' },
     { label: 'Café & Bar', path: cafePath },
-    ...(isMember
+    ...(hasActivePlan
       ? [{ label: 'Book Court', path: '/member/book-court' }]
       : [{ label: 'Guest Booking', path: '/trial' }]),
   ];
