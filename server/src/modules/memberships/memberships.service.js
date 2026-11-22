@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import * as membershipRepo from './memberships.repository.js';
+import { sendMembershipReceiptEmail } from '../../utils/emailService.js';
 
 export const getPlans = async () => {
   return await membershipRepo.getAllPlans();
@@ -170,4 +171,41 @@ export const changeMemberPlan = async (userId, { planId, durationMonths = 12, ac
     durationMonths: normalizedDuration,
     action: normalizedAction,
   });
+};
+
+export const purchaseMembership = async ({ userId, planId, durationMonths = 12, paymentMethod }) => {
+  const normalizedPlanId = Number(planId);
+  const normalizedDuration = Number(durationMonths);
+  const normalizedMethod = String(paymentMethod || '').toUpperCase();
+  if (!Number.isInteger(normalizedPlanId) || ![1, 6, 12].includes(normalizedDuration)) {
+    const error = new Error('Select a valid membership plan and duration (1, 6, or 12 months).');
+    error.statusCode = 400;
+    throw error;
+  }
+  if (!['CASH', 'CARD', 'UPI'].includes(normalizedMethod)) {
+    const error = new Error('Payment method must be CASH, CARD, or UPI.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const receipt = await membershipRepo.purchaseMembership({
+    userId: Number(userId),
+    planId: normalizedPlanId,
+    durationMonths: normalizedDuration,
+    paymentMethod: normalizedMethod,
+  });
+
+  let emailStatus = 'FAILED';
+  try {
+    const emailResult = await sendMembershipReceiptEmail(receipt.customer_email, receipt.customer_name, receipt);
+    emailStatus = emailResult.mode === 'smtp' ? 'SENT' : 'SIMULATED';
+  } catch (error) {
+    console.error(`Failed to email membership receipt ${receipt.invoice_no}:`, error);
+  }
+  try {
+    await membershipRepo.updateMembershipReceiptEmailStatus(receipt.invoice_id, emailStatus);
+  } catch (error) {
+    console.error(`Failed to save membership receipt email status ${receipt.invoice_no}:`, error);
+  }
+  return { ...receipt, receipt_email_status: emailStatus };
 };

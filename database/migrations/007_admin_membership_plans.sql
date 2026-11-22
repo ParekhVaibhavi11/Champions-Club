@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE membership_plans
+  ALTER COLUMN tier TYPE VARCHAR(32) USING tier::TEXT;
+
+COMMIT;

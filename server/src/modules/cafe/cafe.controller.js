@@ -4,13 +4,21 @@ import { successResponse } from '../../utils/apiResponse.js';
 export const menu = async (req, res, next) => { try { return successResponse(res, await service.getMenu(), 'Cafe menu retrieved'); } catch (err) { next(err); } };
 export const tables = async (req, res, next) => { try { return successResponse(res, await service.getTables(), 'Cafe tables retrieved'); } catch (err) { next(err); } };
 export const openOrders = async (req, res, next) => { try { return successResponse(res, await service.listOpenOrders(), 'Open cafe orders retrieved'); } catch (err) { next(err); } };
+export const verifyMembershipDiscount = async (req, res, next) => {
+  try {
+    return successResponse(res, await service.verifyMembershipDiscount(req.body.customer_email), 'Café membership discount verified');
+  } catch (err) {
+    next(err);
+  }
+};
 export const createTab = async (req, res, next) => {
   try {
     const memberId = req.user.role === 'member' ? req.user.id : (req.body.member_id ? Number(req.body.member_id) : null);
     const guestName = req.user.role === 'member' ? req.user.full_name : (req.body.guest_name || null);
+    const guestEmail = req.user.role === 'member' ? req.user.email : (req.body.guest_email || null);
     return successResponse(
       res,
-      await service.createTab({ ...req.body, member_id: memberId, guest_name: guestName, staffId: req.user.id }),
+      await service.createTab({ ...req.body, member_id: memberId, guest_name: guestName, guest_email: guestEmail, staffId: req.user.id }),
       'Cafe tab opened',
       201
     );

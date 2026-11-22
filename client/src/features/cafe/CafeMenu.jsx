@@ -21,7 +21,8 @@ import {
   DollarSign,
   AlertCircle,
   RefreshCw,
-  X
+  X,
+  Receipt
 } from 'lucide-react';
 
 export const CafeMenu = () => {
@@ -32,32 +33,26 @@ export const CafeMenu = () => {
   const [tables, setTables] = useState([]);
   const [selectedTableId, setSelectedTableId] = useState(null);
   const [cart, setCart] = useState({}); // { [item_id]: quantity }
+  const [customerName, setCustomerName] = useState(user?.role === 'member' ? user.full_name || '' : '');
+  const [customerEmail, setCustomerEmail] = useState(user?.role === 'member' ? user.email || '' : '');
+  const [verifiedMembership, setVerifiedMembership] = useState(null);
+  const [verifyingMembership, setVerifyingMembership] = useState(false);
+  const [verificationError, setVerificationError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [loading, setLoading] = useState(true);
   const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [orderMessage, setOrderMessage] = useState('');
   const [orderError, setOrderError] = useState('');
+  const [settledReceipt, setSettledReceipt] = useState(null);
   const [activeTabMode, setActiveTabMode] = useState('ORDER'); // 'ORDER' | 'CATALOG'
 
   const isAdmin = isAuthenticated && user?.role === 'admin';
-  const isMember = isAuthenticated && (user?.role === 'member' || Boolean(user?.membership_tier) || Boolean(user?.membership_id));
-
-  // Determine user discount percentage (Gold: 15%, Silver: 10%, Junior: 10%, or custom field)
-  const discountPct = user?.cafe_discount_pct 
-    ? Number(user.cafe_discount_pct) 
-    : user?.membership_tier === 'GOLD' 
-    ? 15 
-    : user?.membership_tier === 'SILVER' || user?.membership_tier === 'JUNIOR' 
-    ? 10 
-    : 0;
+  const isMember = Boolean(verifiedMembership?.has_active_plan);
+  const discountPct = isMember ? Number(verifiedMembership.cafe_discount_pct || 0) : 0;
 
   const loadMenuAndTables = async () => {
     try {
-      const promises = [cafeService.getMenu()];
-      if (isAuthenticated) {
-        promises.push(cafeService.getTables().catch(() => ({ data: [] })));
-      }
-      const [menuRes, tablesRes] = await Promise.all(promises);
+      const menuRes = await cafeService.getMenu();
       const items = menuRes.data || [];
       setMenu(items);
 
@@ -67,14 +62,21 @@ export const CafeMenu = () => {
       );
       setCategories(cats);
 
-      if (tablesRes?.data) {
-        const tbls = tablesRes.data || [];
-        setTables(tbls);
-        // Default select an open tab belonging to the member or the first available table
-        if (!selectedTableId && tbls.length > 0) {
-          const firstOpen = tbls.find((t) => t.order_id);
-          const firstAvail = tbls.find((t) => !t.order_id);
-          setSelectedTableId(firstAvail ? firstAvail.id : (firstOpen ? firstOpen.id : tbls[0].id));
+      if (isAuthenticated) {
+        try {
+          const tablesRes = await cafeService.getTables();
+          const tbls = tablesRes.data || [];
+          setTables(tbls);
+          if (!tbls.some((table) => String(table.id) === String(selectedTableId))) {
+            const firstAvailable = tbls.find((table) => !table.order_id);
+            const firstOpen = tbls.find((table) => table.order_id);
+            setSelectedTableId(firstAvailable?.id ?? firstOpen?.id ?? null);
+          }
+          if (!tbls.length) setOrderError('No café tables are available. Refresh tables or contact café staff.');
+        } catch (tableError) {
+          setTables([]);
+          setSelectedTableId(null);
+          setOrderError(`Could not load café tables: ${tableError.message}`);
         }
       }
     } catch (err) {
@@ -89,7 +91,35 @@ export const CafeMenu = () => {
     loadMenuAndTables();
   }, [isAuthenticated]);
 
-  const selectedTable = tables.find((t) => t.id === Number(selectedTableId));
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    const timer = window.setInterval(async () => {
+      try {
+        const response = await cafeService.getTables();
+        const latestTables = response.data || [];
+        setTables(latestTables);
+        setSelectedTableId((current) => latestTables.some((table) => String(table.id) === String(current))
+          ? current
+          : (latestTables.find((table) => !table.order_id)?.id ?? latestTables[0]?.id ?? null));
+      } catch (err) {
+        console.error('Failed to refresh café tables:', err);
+      }
+    }, 15000);
+    return () => window.clearInterval(timer);
+  }, [isAuthenticated]);
+
+  const selectedTable = tables.find((t) => String(t.id) === String(selectedTableId));
+  const kitchenEstimateMinutes = 1;
+  const orderAgeMinutes = selectedTable?.opened_at
+    ? Math.max(0, Math.floor((Date.now() - new Date(selectedTable.opened_at).getTime()) / 60000))
+    : 0;
+  const estimatedMinutesRemaining = Math.max(0, kitchenEstimateMinutes - orderAgeMinutes);
+  const kitchenStage = {
+    PENDING: 'Waiting for kitchen to start',
+    PREPARING: 'Being prepared',
+    READY: 'Cooked and ready',
+    SERVED: 'Served',
+  }[selectedTable?.kitchen_status] || 'Kitchen status unavailable';
 
   // Cart operations
   const inc = (id) => {
@@ -118,6 +148,8 @@ export const CafeMenu = () => {
     setOrderError('');
   };
 
+  const printSettledReceipt = () => window.print();
+
   // Cart items calculations
   const cartItems = Object.entries(cart)
     .filter(([, qty]) => qty > 0)
@@ -140,6 +172,25 @@ export const CafeMenu = () => {
   const cartDiscountAmount = isMember && discountPct > 0 ? (eligibleSubtotal * discountPct) / 100 : 0;
   const cartFinalTotal = Math.max(0, cartSubtotal - cartDiscountAmount);
 
+  const handleVerifyMembership = async () => {
+    setVerificationError('');
+    setVerifiedMembership(null);
+    setVerifyingMembership(true);
+    try {
+      const result = await cafeService.verifyMembershipDiscount(customerEmail.trim());
+      const membership = result.data;
+      setVerifiedMembership(membership);
+      if (membership.has_active_plan) {
+        setCustomerName((current) => current.trim() || membership.full_name);
+        setCustomerEmail(membership.email);
+      }
+    } catch (err) {
+      setVerificationError(err.message || 'Could not verify membership for this email.');
+    } finally {
+      setVerifyingMembership(false);
+    }
+  };
+
   // Submit Order (Open Tab or Add Items to existing Open Tab)
   const handlePlaceOrder = async () => {
     if (!isAuthenticated) {
@@ -152,6 +203,18 @@ export const CafeMenu = () => {
     }
     if (!cartItems.length) {
       setOrderError('Please add at least one menu item to your tab.');
+      return;
+    }
+    if (!customerName.trim() || !customerEmail.trim()) {
+      setOrderError('Enter the customer name and email before placing the order.');
+      return;
+    }
+    if (!verifiedMembership) {
+      setOrderError('Verify the customer email to check for an active membership discount before ordering.');
+      return;
+    }
+    if (selectedTable?.order_id && selectedTable.guest_email && customerEmail.trim().toLowerCase() !== selectedTable.guest_email.toLowerCase()) {
+      setOrderError('This open tab is attached to a different customer email. Select the matching customer to continue.');
       return;
     }
 
@@ -172,13 +235,14 @@ export const CafeMenu = () => {
       } else {
         // Create new tab
         const res = await cafeService.createOrder({
-          table_id: selectedTableId,
-          member_id: user?.id || null,
-          guest_name: user?.full_name || null,
+          table_id: Number(selectedTableId),
+          member_id: verifiedMembership?.has_active_plan ? verifiedMembership.user_id : null,
+          guest_name: customerName.trim(),
+          guest_email: customerEmail.trim(),
           items: itemsPayload,
         });
         const orderNo = res.data?.order_no || 'OPEN';
-        setOrderMessage(`Tab #${orderNo} opened successfully at Table ${selectedTable?.table_number}! Order sent to kitchen queue.`);
+        setOrderMessage(`Tab #${orderNo} opened at Table ${selectedTable?.table_number}. Order sent to the kitchen; the paid receipt will be emailed when the tab is settled.`);
       }
       setCart({});
       await loadMenuAndTables();
@@ -195,8 +259,17 @@ export const CafeMenu = () => {
     setOrderSubmitting(true);
     setOrderError('');
     try {
-      await cafeService.settle(selectedTable.order_id, paymentMethod);
-      setOrderMessage(`Tab #${selectedTable.order_no} settled successfully via ${paymentMethod}! Table ${selectedTable.table_number} is now released.`);
+      const settled = await cafeService.settle(selectedTable.order_id, paymentMethod);
+      setSettledReceipt(settled.data);
+      const emailStatus = settled.data?.receipt_email_status;
+      const emailMessage = emailStatus === 'SENT'
+        ? 'Receipt emailed.'
+        : emailStatus === 'SIMULATED'
+        ? 'Receipt email simulated because SMTP is not configured.'
+        : emailStatus === 'FAILED'
+        ? 'Receipt email could not be sent.'
+        : '';
+      setOrderMessage(`Tab #${selectedTable.order_no} settled via ${paymentMethod}. Table ${selectedTable.table_number} is released. ${emailMessage}`);
       await loadMenuAndTables();
     } catch (err) {
       setOrderError(err.message || 'Failed to settle tab.');
@@ -210,7 +283,8 @@ export const CafeMenu = () => {
     : menu.filter((item) => item.category_name === selectedCategory);
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="w-full min-w-0 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-8">
+      <style>{`@media print { body * { visibility: hidden !important; } #cafe-paid-receipt, #cafe-paid-receipt * { visibility: visible !important; } #cafe-paid-receipt { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 24px; background: white; } }`}</style>
       
       {/* Hero Header */}
       <div className="relative rounded-3xl bg-neutral-950 text-white p-6 sm:p-10 border border-neutral-800 shadow-xl overflow-hidden">
@@ -237,7 +311,7 @@ export const CafeMenu = () => {
             <div className="mt-5 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 flex items-center space-x-3 text-xs sm:text-sm font-bold">
               <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
               <span>
-                <strong>{user?.membership_tier || 'MEMBER'} PRIVILEGE:</strong> {discountPct}% automatic discount applied to all your dining orders!
+                <strong>{verifiedMembership?.plan_tier || 'MEMBER'} PRIVILEGE:</strong> {discountPct}% discount applied to eligible dining items.
               </span>
             </div>
           )}
@@ -331,6 +405,30 @@ export const CafeMenu = () => {
         </div>
       )}
 
+      {settledReceipt && (
+        <section id="cafe-paid-receipt" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div><h2 className="font-black uppercase">Payment complete · {settledReceipt.order_no}</h2><p className="mt-1 text-sm">Receipt email: {settledReceipt.receipt_email_status}</p></div>
+            <button type="button" onClick={printSettledReceipt} className="rounded-lg bg-champion-dark px-4 py-2 text-xs font-bold text-white">Print Receipt</button>
+          </div>
+          <div className="rounded-xl bg-white p-5 text-gray-900">
+            <h3 className="text-center text-lg font-black uppercase">Champions Club · Café Receipt</h3>
+            <div className="mt-4 grid gap-1 text-xs sm:grid-cols-2">
+              <p><strong>Customer:</strong> {settledReceipt.customer_name}</p><p><strong>Email:</strong> {settledReceipt.customer_email}</p>
+              <p><strong>Table:</strong> {settledReceipt.table_number}</p><p><strong>Payment:</strong> {settledReceipt.payment_method}</p>
+            </div>
+            <div className="mt-4 space-y-2 border-y py-3 text-sm">
+              {(settledReceipt.items || []).map((item, index) => <div key={`${item.menu_item_id}-${index}`} className="flex justify-between"><span>{item.quantity} × {item.name}</span><span>₹{Number(item.subtotal).toFixed(2)}</span></div>)}
+            </div>
+            <div className="ml-auto mt-3 max-w-xs space-y-1 text-right text-xs">
+              <p>Subtotal: ₹{Number(settledReceipt.subtotal).toFixed(2)}</p>
+              <p>{Number(settledReceipt.membership_discount_pct) > 0 ? `${settledReceipt.membership_tier} membership discount (${Number(settledReceipt.membership_discount_pct)}%)` : 'Discount'}: −₹{Number(settledReceipt.discount_amount).toFixed(2)}</p>
+              <p className="text-base font-black">Total paid: ₹{Number(settledReceipt.total_amount).toFixed(2)}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* STEP 1: Table Selector (Available to Authenticated Members & Admins) */}
       {isAuthenticated && tables.length > 0 && (
         <section className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
@@ -355,14 +453,21 @@ export const CafeMenu = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
             {tables.map((table) => {
-              const isSelected = selectedTableId === table.id;
+              const isSelected = String(selectedTableId) === String(table.id);
               const hasOpenTab = Boolean(table.order_id);
 
               return (
                 <button
                   key={table.id}
                   type="button"
-                  onClick={() => setSelectedTableId(table.id)}
+                  onClick={() => {
+                    setSelectedTableId(table.id);
+                    if (table.order_id) {
+                      setCustomerName(table.guest_name || table.member_name || '');
+                      setCustomerEmail(table.guest_email || '');
+                      setVerifiedMembership(null);
+                    }
+                  }}
                   className={`p-3.5 rounded-2xl border text-left transition-all relative ${
                     isSelected
                       ? 'border-champion-red bg-red-50/40 ring-2 ring-champion-red/20 shadow-md'
@@ -397,10 +502,10 @@ export const CafeMenu = () => {
       )}
 
       {/* Main Interactive Grid: Menu Items + Live Ordering Cart Aside */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8 items-start">
+      <div className="grid min-w-0 grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_360px] gap-6 2xl:gap-8 items-start">
         
         {/* Left Column: Category Filters & Offerings Grid */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Category Tabs */}
           <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none">
             <button
@@ -440,7 +545,7 @@ export const CafeMenu = () => {
               No menu items found for this category.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-5">
               {filteredMenu.map((item) => {
                 const rawPrice = Number(item.price || 0);
                 const isEligible = item.member_discount_eligible;
@@ -538,7 +643,7 @@ export const CafeMenu = () => {
         </div>
 
         {/* Right Column: Live Table Tab & Cart Aside */}
-        <aside className="sticky top-24 bg-white rounded-3xl p-6 border border-gray-200 shadow-lg space-y-6">
+        <aside className="min-w-0 w-full 2xl:sticky 2xl:top-24 bg-white rounded-3xl p-4 sm:p-6 border border-gray-200 shadow-lg space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <div className="flex items-center space-x-2">
               <ShoppingBag className="w-5 h-5 text-champion-red" />
@@ -557,6 +662,35 @@ export const CafeMenu = () => {
             )}
           </div>
 
+          {/* Keep table selection beside the cart so placing an order never depends on scrolling back up. */}
+          {isAuthenticated && (
+            <label className="block text-xs font-bold text-gray-600">
+              Dining Table / Bar Seat *
+              <select
+                value={selectedTableId ?? ''}
+                onChange={(event) => {
+                  const table = tables.find((candidate) => String(candidate.id) === event.target.value);
+                  setSelectedTableId(table?.id ?? null);
+                  if (table?.order_id) {
+                    setCustomerName(table.guest_name || table.member_name || '');
+                    setCustomerEmail(table.guest_email || '');
+                    setVerifiedMembership(null);
+                  }
+                  setOrderError('');
+                }}
+                className="mt-1 w-full min-w-0 rounded-lg border bg-white p-2.5 text-sm"
+              >
+                <option value="">Select a table</option>
+                {tables.map((table) => (
+                  <option key={table.id} value={table.id}>
+                    {table.table_number} · {table.order_id ? `Open tab #${table.order_no}` : 'Available'}
+                  </option>
+                ))}
+              </select>
+              {!tables.length && <span className="mt-1 block text-xs font-medium text-red-700">No tables are available. Refresh the table list or contact café staff.</span>}
+            </label>
+          )}
+
           {/* Selected Table Info */}
           <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between">
             <div>
@@ -574,6 +708,56 @@ export const CafeMenu = () => {
             )}
           </div>
 
+          {isAuthenticated && (
+            <div className="space-y-3 border-b border-gray-100 pb-4">
+              <label className="block text-xs font-bold text-gray-600">
+                Customer Name *
+                <input
+                  required
+                  maxLength={100}
+                  value={customerName}
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  readOnly={user?.role === 'member'}
+                  className="mt-1 w-full min-w-0 rounded-lg border p-2.5 text-sm"
+                  placeholder="Enter customer name"
+                />
+              </label>
+              <label className="block text-xs font-bold text-gray-600">
+                Customer Email *
+                <input
+                  required
+                  type="email"
+                  maxLength={254}
+                  value={customerEmail}
+                  onChange={(event) => {
+                    setCustomerEmail(event.target.value);
+                    setVerifiedMembership(null);
+                    setVerificationError('');
+                  }}
+                  readOnly={user?.role === 'member' || Boolean(selectedTable?.order_id)}
+                  className="mt-1 w-full min-w-0 rounded-lg border p-2.5 text-sm"
+                  placeholder="name@example.com"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={!customerEmail.trim() || verifyingMembership}
+                onClick={handleVerifyMembership}
+                className="w-full rounded-lg border border-champion-red px-3 py-2.5 text-xs font-black uppercase text-champion-red hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {verifyingMembership ? 'Verifying Plan…' : 'Verify Plan & Apply Discount'}
+              </button>
+              {verificationError && <p className="text-xs font-semibold text-red-700">{verificationError}</p>}
+              {verifiedMembership?.has_active_plan ? (
+                <p className="rounded-lg bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-800">
+                  {verifiedMembership.plan_tier} plan verified · {discountPct}% café discount applied to eligible items.
+                </p>
+              ) : verifiedMembership ? (
+                <p className="rounded-lg bg-gray-50 p-2.5 text-xs text-gray-600">No active plan found. Standard pricing applies.</p>
+              ) : null}
+            </div>
+          )}
+
           {/* If the table has an open tab already */}
           {selectedTable?.order_id && (
             <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
@@ -586,6 +770,22 @@ export const CafeMenu = () => {
               <p className="text-[11px] text-amber-700 leading-tight">
                 An active tab is running. You can add more items or settle below.
               </p>
+              <div className="rounded-lg border border-amber-200 bg-white/80 p-2.5 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-bold text-gray-700">Kitchen update</span>
+                  <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase ${['READY', 'SERVED'].includes(selectedTable.kitchen_status) ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}`}>
+                    {kitchenStage}
+                  </span>
+                </div>
+                {['READY', 'SERVED'].includes(selectedTable.kitchen_status) ? (
+                  <p className="mt-1 text-[11px] text-emerald-800">Your order is ready. Select a payment method below to settle the tab.</p>
+                ) : (
+                  <p className="mt-1 text-[11px] text-gray-600">
+                    Approximate kitchen target: {estimatedMinutesRemaining > 0 ? `about ${estimatedMinutesRemaining} min remaining` : 'preparation may take longer than usual'}.
+                    {' '}This is an estimate; the status refreshes automatically about every 15 seconds.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -639,7 +839,7 @@ export const CafeMenu = () => {
 
               {isMember && discountPct > 0 && cartDiscountAmount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-bold">
-                  <span>{user?.membership_tier || 'Member'} Discount ({discountPct}%)</span>
+                  <span>{verifiedMembership?.plan_tier || 'Member'} Discount ({discountPct}%)</span>
                   <span className="font-mono">-₹{cartDiscountAmount.toFixed(2)}</span>
                 </div>
               )}
@@ -656,7 +856,7 @@ export const CafeMenu = () => {
             <button
               type="button"
               onClick={handlePlaceOrder}
-              disabled={orderSubmitting || cartItems.length === 0 || !selectedTableId}
+              disabled={orderSubmitting || cartItems.length === 0}
               className="w-full py-3.5 rounded-2xl bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-black tracking-wider transition-all shadow-md hover:shadow-red-900/30 disabled:opacity-50 flex items-center justify-center space-x-2"
             >
               <UtensilsCrossed className="w-4 h-4" />
@@ -683,6 +883,11 @@ export const CafeMenu = () => {
               <span className="text-xs font-black uppercase tracking-wider text-gray-700 block">
                 Settle Open Tab (#{selectedTable.order_no})
               </span>
+              {['READY', 'SERVED'].includes(selectedTable.kitchen_status) ? (
+                <p className="rounded-lg bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-800">Kitchen marked this order cooked. Choose a payment method to settle and email the receipt.</p>
+              ) : (
+                <p className="rounded-lg bg-amber-50 p-2.5 text-xs font-semibold text-amber-800">Waiting for the kitchen to mark this order cooked. Payment will be available after preparation.</p>
+              )}
               <div className="grid grid-cols-3 gap-2">
                 {['UPI', 'CARD', 'CASH'].map((method) => (
                   <button
@@ -702,7 +907,7 @@ export const CafeMenu = () => {
               <button
                 type="button"
                 onClick={handleSettleTab}
-                disabled={orderSubmitting}
+                disabled={orderSubmitting || !['READY', 'SERVED'].includes(selectedTable.kitchen_status)}
                 className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm disabled:opacity-50 flex items-center justify-center space-x-2"
               >
                 <Receipt className="w-4 h-4 text-emerald-400" />

@@ -58,3 +58,17 @@ export const changeMemberPlan = async (req, res, next) => {
     next(err);
   }
 };
+
+export const purchaseMembership = async (req, res, next) => {
+  try {
+    const result = await membershipService.purchaseMembership({
+      userId: req.user.id,
+      planId: req.body.planId,
+      durationMonths: req.body.durationMonths,
+      paymentMethod: req.body.paymentMethod,
+    });
+    return successResponse(res, result, 'Membership purchased and receipt generated', 201);
+  } catch (err) {
+    next(err);
+  }
+};
