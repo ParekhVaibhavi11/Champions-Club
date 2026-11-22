@@ -576,15 +576,15 @@ export const CafeMenu = () => {
 
           {/* If the table has an open tab already */}
           {selectedTable?.order_id && (
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+            <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-amber-900">Active Tab #{selectedTable.order_no}</span>
-                <span className="font-mono font-black text-amber-900">
+                <span className="font-bold text-blue-900">Active Tab #{selectedTable.order_no}</span>
+                <span className="font-mono font-black text-blue-900">
                   ₹{Number(selectedTable.total_amount || 0).toFixed(2)}
                 </span>
               </div>
-              <p className="text-[11px] text-amber-700 leading-tight">
-                An active tab is running. You can add more items or settle below.
+              <p className="text-[11px] text-blue-700 leading-tight">
+                Order will be served directly at Table {selectedTable.table_number}. Pay when leaving at the front desk.
               </p>
             </div>
           )}
@@ -653,21 +653,26 @@ export const CafeMenu = () => {
 
           {/* Action Button: Send to Kitchen */}
           {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={handlePlaceOrder}
-              disabled={orderSubmitting || cartItems.length === 0 || !selectedTableId}
-              className="w-full py-3.5 rounded-2xl bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-black tracking-wider transition-all shadow-md hover:shadow-red-900/30 disabled:opacity-50 flex items-center justify-center space-x-2"
-            >
-              <UtensilsCrossed className="w-4 h-4" />
-              <span>
-                {orderSubmitting
-                  ? 'Routing to Kitchen...'
-                  : selectedTable?.order_id
-                  ? 'Add Items to Active Tab'
-                  : 'Place Order & Send to Kitchen'}
-              </span>
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handlePlaceOrder}
+                disabled={orderSubmitting || cartItems.length === 0 || !selectedTableId}
+                className="w-full py-3.5 rounded-2xl bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-black tracking-wider transition-all shadow-md hover:shadow-red-900/30 disabled:opacity-50 flex items-center justify-center space-x-2 cursor-pointer"
+              >
+                <UtensilsCrossed className="w-4 h-4" />
+                <span>
+                  {orderSubmitting
+                    ? 'Routing to Kitchen...'
+                    : selectedTable?.order_id
+                    ? `Add to Table ${selectedTable?.table_number} Tab`
+                    : `Order to Table ${selectedTable?.table_number || ''} (Pay at Desk)`}
+                </span>
+              </button>
+              <p className="text-[10px] text-gray-500 text-center font-medium">
+                No online payment needed now. Your food will be served at your table, and payment will be collected at the counter.
+              </p>
+            </div>
           ) : (
             <Link
               to="/login"

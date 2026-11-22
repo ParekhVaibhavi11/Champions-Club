@@ -9,5 +9,6 @@ router.get('/dashboard/summary', controller.summary);
 router.get('/reports/revenue', controller.revenue);
 router.get('/finance/ledger', controller.ledger);
 router.get('/hr/overview', controller.hrOverview);
+router.post('/hr/staff', controller.createStaff);
 router.patch('/hr/leave-requests/:id', controller.reviewLeave);
 export default router;
