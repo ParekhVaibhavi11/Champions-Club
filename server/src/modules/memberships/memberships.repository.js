@@ -51,6 +51,7 @@ export const searchMembers = async (search = '') => {
       p.id as plan_id,
       p.name as plan_name,
       p.tier as plan_tier,
+      p.monthly_fee,
       p.court_discount_pct,
       p.shop_discount_pct,
       p.cafe_discount_pct
@@ -190,4 +191,82 @@ export const extendMembership = async (membershipId, monthsToAdd = 1) => {
   `;
   const result = await pool.query(query, [membershipId, monthsToAdd]);
   return result.rows[0];
+};
+
+export const assignPlanToExistingMember = async ({ userId, planId, durationMonths, action }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const memberResult = await client.query(
+      `SELECT u.id
+       FROM users u
+       JOIN member_profiles mp ON mp.user_id = u.id
+       WHERE u.id = $1 AND u.role = 'member'
+       FOR UPDATE OF u`,
+      [userId]
+    );
+    if (!memberResult.rows[0]) {
+      const error = new Error('Member not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const activeResult = await client.query(
+      `SELECT m.id, m.plan_id, p.monthly_fee
+       FROM memberships m
+       JOIN membership_plans p ON p.id = m.plan_id
+       WHERE m.user_id = $1 AND m.status = 'ACTIVE' AND m.end_date >= CURRENT_DATE
+       ORDER BY m.end_date DESC
+       LIMIT 1
+       FOR UPDATE OF m`,
+      [userId]
+    );
+    const activeMembership = activeResult.rows[0];
+
+    if (action === 'CHOOSE' && activeMembership) {
+      const error = new Error('This member already has an active plan. Use the upgrade or extend action.');
+      error.statusCode = 409;
+      throw error;
+    }
+    if (action === 'UPGRADE' && !activeMembership) {
+      const error = new Error('This member has no active plan to upgrade. Choose a plan instead.');
+      error.statusCode = 409;
+      throw error;
+    }
+
+    if (action === 'UPGRADE') {
+      const targetResult = await client.query(
+        'SELECT monthly_fee FROM membership_plans WHERE id = $1 AND is_active = TRUE',
+        [planId]
+      );
+      if (!targetResult.rows[0] || Number(targetResult.rows[0].monthly_fee) <= Number(activeMembership.monthly_fee)) {
+        const error = new Error('Upgrade must use a plan with a higher monthly fee.');
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    await client.query(
+      `UPDATE memberships
+       SET status = CASE WHEN end_date < CURRENT_DATE THEN 'EXPIRED'::membership_status ELSE 'CANCELLED'::membership_status END
+       WHERE user_id = $1 AND status = 'ACTIVE'`,
+      [userId]
+    );
+
+    const result = await client.query(
+      `INSERT INTO memberships (user_id, plan_id, start_date, end_date, status, auto_renew)
+       VALUES ($1, $2, CURRENT_DATE, CURRENT_DATE + ($3 || ' months')::INTERVAL, 'ACTIVE', TRUE)
+       RETURNING id, user_id, plan_id, start_date, end_date, status`,
+      [userId, planId, durationMonths]
+    );
+
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };

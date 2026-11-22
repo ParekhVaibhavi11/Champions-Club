@@ -10,7 +10,6 @@ import {
   Trophy,
   AlertCircle,
   Phone,
-  ArrowLeft,
   FileText,
   ChevronRight,
   CreditCard,
@@ -95,7 +94,6 @@ export const TrialStatus = () => {
           to="/trial"
           className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-champion-blue transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
           <span>Book Another Session</span>
         </Link>
       </div>
