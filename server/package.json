@@ -5,12 +5,19 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "migrate:shop-receipts": "node src/migrate_shop_receipts.js",
+    "migrate:cafe-receipts": "node src/migrate_cafe_receipts.js",
+    "migrate:membership-checkout": "node src/migrate_membership_checkout_receipts.js",
+    "migrate:admin-membership-plans": "node src/migrate_admin_membership_plans.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.6.1",
     "pg": "^8.12.0"
   },
   "devDependencies": {
