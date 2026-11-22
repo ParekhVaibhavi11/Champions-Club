@@ -147,6 +147,63 @@ export const setKitchenStatus = async (orderId, status) => {
   return result.rows[0];
 };
 
+export const listAllCafeOrders = async ({ search = '', status = '', kitchenStatus = '', memberId = null } = {}) => {
+  const conditions = [];
+  const params = [];
+
+  if (memberId) {
+    params.push(Number(memberId));
+    conditions.push(`o.member_id = $${params.length}`);
+  }
+
+  if (status) {
+    params.push(status);
+    conditions.push(`o.status = $${params.length}`);
+  }
+
+  if (kitchenStatus) {
+    params.push(kitchenStatus);
+    conditions.push(`o.kitchen_status = $${params.length}`);
+  }
+
+  if (search) {
+    params.push(`%${search.trim()}%`);
+    conditions.push(`(o.order_no ILIKE $${params.length} OR u.full_name ILIKE $${params.length} OR o.guest_name ILIKE $${params.length} OR t.table_number ILIKE $${params.length})`);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  const query = `
+    SELECT o.id, o.order_no, o.table_id, t.table_number, o.guest_name,
+           o.status, o.kitchen_status, o.subtotal, o.discount_amount, o.total_amount,
+           o.created_at, o.settled_at, u.full_name AS member_name, u.email AS member_email,
+           COALESCE(
+             json_agg(
+               json_build_object(
+                 'name', mi.name,
+                 'quantity', oi.quantity,
+                 'unit_price', oi.unit_price,
+                 'subtotal', oi.subtotal,
+                 'instructions', oi.special_instructions
+               )
+             ) FILTER (WHERE oi.id IS NOT NULL),
+             '[]'::json
+           ) AS items
+    FROM cafe_orders o
+    LEFT JOIN dining_tables t ON t.id = o.table_id
+    LEFT JOIN users u ON u.id = o.member_id
+    LEFT JOIN cafe_order_items oi ON oi.order_id = o.id
+    LEFT JOIN menu_items mi ON mi.id = oi.menu_item_id
+    ${whereClause}
+    GROUP BY o.id, t.table_number, u.full_name, u.email
+    ORDER BY o.created_at DESC
+    LIMIT 200;
+  `;
+
+  const result = await pool.query(query, params);
+  return result.rows;
+};
+
 export const settleTab = async ({ orderId, staffId, paymentMethod }) => {
   const client = await pool.connect();
   try {

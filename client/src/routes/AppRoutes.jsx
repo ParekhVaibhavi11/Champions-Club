@@ -32,6 +32,7 @@ import { ShopCatalog } from '../features/shop/ShopCatalog';
 import { CafeMenu } from '../features/cafe/CafeMenu';
 import { AdminFinance } from '../features/finance/AdminFinance';
 import { AdminHr } from '../features/finance/AdminHr';
+import { AdminOrderHistory } from '../features/finance/AdminOrderHistory';
 import { ShopPageLayout } from '../layouts/ShopPageLayout';
 import { CafePageLayout } from '../layouts/CafePageLayout';
 
@@ -112,6 +113,7 @@ export const AppRoutes = () => {
         <Route path="courts" element={<CourtManagement />} />
         <Route path="cafe" element={<CafePOS />} />
         <Route path="finance" element={<AdminFinance />} />
+        <Route path="orders" element={<AdminOrderHistory />} />
         <Route path="hr" element={<AdminHr />} />
       </Route>
 

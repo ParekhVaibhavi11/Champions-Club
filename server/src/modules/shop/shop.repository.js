@@ -154,14 +154,45 @@ export const createShopOrder = async ({ customerId, cashierId, paymentMethod, it
   }
 };
 
-export const listShopOrders = async () => {
+export const listShopOrders = async ({ search = '', customerId = null } = {}) => {
+  const conditions = [];
+  const params = [];
+
+  if (customerId) {
+    params.push(Number(customerId));
+    conditions.push(`o.customer_id = $${params.length}`);
+  }
+
+  if (search) {
+    params.push(`%${search.trim()}%`);
+    conditions.push(`(o.receipt_no ILIKE $${params.length} OR customer.full_name ILIKE $${params.length} OR cashier.full_name ILIKE $${params.length})`);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
   const result = await pool.query(`
-    SELECT o.id, o.receipt_no, o.total_amount, o.payment_method, o.created_at,
-           cashier.full_name AS cashier_name, customer.full_name AS customer_name
+    SELECT o.id, o.receipt_no, o.subtotal, o.discount_amount, o.total_amount, o.payment_method, o.created_at,
+           cashier.full_name AS cashier_name, customer.full_name AS customer_name,
+           COALESCE(
+             json_agg(
+               json_build_object(
+                 'name', p.name,
+                 'sku', p.sku,
+                 'quantity', oi.quantity,
+                 'unit_price', oi.unit_price,
+                 'line_total', oi.line_total
+               )
+             ) FILTER (WHERE oi.id IS NOT NULL),
+             '[]'::json
+           ) AS items
     FROM shop_orders o
     JOIN users cashier ON cashier.id = o.cashier_id
     LEFT JOIN users customer ON customer.id = o.customer_id
-    ORDER BY o.created_at DESC LIMIT 100;
-  `);
+    LEFT JOIN shop_order_items oi ON oi.order_id = o.id
+    LEFT JOIN products p ON p.id = oi.product_id
+    ${whereClause}
+    GROUP BY o.id, cashier.full_name, customer.full_name
+    ORDER BY o.created_at DESC LIMIT 150;
+  `, params);
   return result.rows;
 };

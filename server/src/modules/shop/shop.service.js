@@ -30,4 +30,5 @@ export const createOrder = async ({ customerId, cashierId, paymentMethod, items 
   return repo.createShopOrder({ customerId: customerId ? Number(customerId) : null, cashierId, paymentMethod, items: items.map((item) => ({ product_id: Number(item.product_id), quantity: Number(item.quantity) })) });
 };
 
-export const listOrders = () => repo.listShopOrders();
+export const listOrders = (filters) => repo.listShopOrders(filters);
+export const getMyOrders = (customerId) => repo.listShopOrders({ customerId });

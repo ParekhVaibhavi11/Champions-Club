@@ -17,5 +17,8 @@ export const createOrder = async (req, res, next) => {
   try { return successResponse(res, await service.createOrder({ ...req.body, cashierId: req.user.id }), 'POS order completed', 201); } catch (err) { next(err); }
 };
 export const orders = async (req, res, next) => {
-  try { return successResponse(res, await service.listOrders(), 'Recent POS orders retrieved'); } catch (err) { next(err); }
+  try { return successResponse(res, await service.listOrders({ search: req.query.search, customerId: req.query.customer_id }), 'Recent POS orders retrieved'); } catch (err) { next(err); }
+};
+export const myOrders = async (req, res, next) => {
+  try { return successResponse(res, await service.getMyOrders(req.user.id), 'Member shop orders retrieved'); } catch (err) { next(err); }
 };

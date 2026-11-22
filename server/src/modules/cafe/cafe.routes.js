@@ -12,4 +12,6 @@ router.post('/cafe/orders/:id/items', authenticateToken, authorizeRole(['staff',
 router.post('/cafe/orders/:id/settle', authenticateToken, authorizeRole(['staff', 'admin', 'member']), checkStaffSubPermission('cafe'), controller.settle);
 router.get('/cafe/kitchen-queue', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('kitchen'), controller.openOrders);
 router.patch('/cafe/orders/:id/kitchen-status', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('kitchen'), controller.kitchenStatus);
+router.get('/cafe/orders/my-orders', authenticateToken, authorizeRole(['member', 'admin']), controller.myOrders);
+router.get('/cafe/orders/history', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('cafe'), controller.allOrders);
 export default router;

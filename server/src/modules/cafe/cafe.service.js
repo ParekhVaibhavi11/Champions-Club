@@ -59,3 +59,6 @@ export const settleTab = async ({ orderId, staffId, paymentMethod }) => {
   }
   return repo.settleTab({ orderId: Number(orderId), staffId, paymentMethod });
 };
+
+export const listAllOrders = (filters) => repo.listAllCafeOrders(filters);
+export const getMyOrders = (memberId) => repo.listAllCafeOrders({ memberId });

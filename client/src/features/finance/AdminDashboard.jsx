@@ -42,7 +42,15 @@ export const AdminDashboard = () => {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="mb-4 font-black uppercase text-champion-dark">Revenue by Department · 30 days</h2>{revenue.length ? <div className="space-y-3">{revenue.map((row) => <div key={row.department} className="flex items-center justify-between border-b pb-3 text-sm"><span className="font-semibold">{row.department}</span><span className="font-mono">₹{Number(row.revenue).toLocaleString('en-IN')} <span className="text-xs text-gray-400">({row.payment_count} payments)</span></span></div>)}</div> : <p className="text-sm text-gray-500">No recorded payments for this period.</p>}</section>
-        <section className="rounded-2xl border bg-white p-6 shadow-sm"><h2 className="mb-4 font-black uppercase text-champion-dark">Management</h2><div className="grid gap-3 sm:grid-cols-2"><Link to="/admin/courts" className="rounded-xl border p-4 font-bold hover:border-champion-red">Courts & maintenance</Link><Link to="/admin/finance" className="rounded-xl border p-4 font-bold hover:border-champion-red">Finance ledger</Link><Link to="/admin/hr" className="rounded-xl border p-4 font-bold hover:border-champion-red">Staff & shifts</Link></div></section>
+        <section className="rounded-2xl border bg-white p-6 shadow-sm">
+          <h2 className="mb-4 font-black uppercase text-champion-dark">Management</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link to="/admin/courts" className="rounded-xl border p-4 font-bold hover:border-champion-red">Courts & maintenance</Link>
+            <Link to="/admin/orders" className="rounded-xl border p-4 font-bold hover:border-champion-red">Orders & Tabs (Shop/Café)</Link>
+            <Link to="/admin/finance" className="rounded-xl border p-4 font-bold hover:border-champion-red">Finance ledger</Link>
+            <Link to="/admin/hr" className="rounded-xl border p-4 font-bold hover:border-champion-red">Staff & shifts</Link>
+          </div>
+        </section>
       </div>
     </div>
   );

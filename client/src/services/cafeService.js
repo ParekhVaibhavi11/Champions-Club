@@ -8,4 +8,9 @@ export const cafeService = {
   settle: (id, payment_method) => api.post(`/cafe/orders/${id}/settle`, { payment_method }),
   getKitchenQueue: () => api.get('/cafe/kitchen-queue'),
   setKitchenStatus: (id, status) => api.patch(`/cafe/orders/${id}/kitchen-status`, { status }),
+  getMyOrders: () => api.get('/cafe/orders/my-orders'),
+  getOrderHistory: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return api.get(`/cafe/orders/history${q ? `?${q}` : ''}`);
+  },
 };

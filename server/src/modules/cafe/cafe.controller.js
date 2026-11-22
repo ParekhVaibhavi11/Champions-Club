@@ -21,3 +21,24 @@ export const createTab = async (req, res, next) => {
 export const appendItems = async (req, res, next) => { try { return successResponse(res, await service.appendItems(req.params.id, req.body.items), 'Items added to cafe tab'); } catch (err) { next(err); } };
 export const kitchenStatus = async (req, res, next) => { try { return successResponse(res, await service.updateKitchenStatus(req.params.id, req.body.status), 'Kitchen status updated'); } catch (err) { next(err); } };
 export const settle = async (req, res, next) => { try { return successResponse(res, await service.settleTab({ orderId: Number(req.params.id), staffId: req.user.id, paymentMethod: req.body.payment_method }), 'Cafe tab settled'); } catch (err) { next(err); } };
+export const allOrders = async (req, res, next) => {
+  try {
+    const orders = await service.listAllOrders({
+      search: req.query.search,
+      status: req.query.status,
+      kitchenStatus: req.query.kitchen_status,
+      memberId: req.query.member_id,
+    });
+    return successResponse(res, orders, 'Cafe order history retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
+export const myOrders = async (req, res, next) => {
+  try {
+    const orders = await service.getMyOrders(req.user.id);
+    return successResponse(res, orders, 'Member cafe orders retrieved');
+  } catch (err) {
+    next(err);
+  }
+};
