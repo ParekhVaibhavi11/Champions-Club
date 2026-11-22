@@ -15,6 +15,24 @@ export const summary = async (req, res, next) => {
     }
 };
 
+export const membershipPlans = async (req, res, next) => {
+    try {
+        return successResponse(res, await service.getMembershipPlans(), 'Membership plans retrieved');
+    } catch (err) { next(err); }
+};
+
+export const createMembershipPlan = async (req, res, next) => {
+    try {
+        return successResponse(res, await service.createMembershipPlan(req.body), 'Membership plan created', 201);
+    } catch (err) { next(err); }
+};
+
+export const updateMembershipPlan = async (req, res, next) => {
+    try {
+        return successResponse(res, await service.updateMembershipPlan(req.params.id, req.body), 'Membership plan updated');
+    } catch (err) { next(err); }
+};
+
 export const revenue = async (req, res, next) => {
     try {
         return successResponse(

@@ -13,6 +13,18 @@ export const Navbar = () => {
 
   const isAdmin = isAuthenticated && user?.role === 'admin';
   const isMember = isAuthenticated && user?.role === 'member';
+  const isDepartmentStaff = isAuthenticated && user?.role === 'staff';
+  const isFrontDeskOfficer = isAuthenticated && user?.role === 'front_desk';
+  const isStaffWorkspace = isDepartmentStaff || isFrontDeskOfficer;
+  const staffHomePath = user?.staff_department === 'shop'
+    ? '/staff/shop-pos'
+    : user?.staff_department === 'cafe'
+    ? '/staff/cafe-pos'
+    : user?.staff_department === 'kitchen'
+    ? '/staff/kitchen'
+    : isFrontDeskOfficer
+    ? '/desk/calendar'
+    : '/';
   const hasActivePlan = hasActiveMembership(user, isAuthenticated);
   const cafePath = isAdmin ? '/admin/cafe' : (isMember ? '/member/cafe' : '/cafe');
 
@@ -29,7 +41,7 @@ export const Navbar = () => {
     return 'default';
   };
 
-  const navLinks = [
+  const navLinks = isStaffWorkspace ? [] : [
     { label: 'Sports Arenas', path: '/sports' },
     { label: 'Court Availability', path: '/availability' },
     { label: 'Memberships', path: '/plans' },
@@ -47,7 +59,7 @@ export const Navbar = () => {
         {/* Left Side: Brand Logo */}
         <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center space-x-3 group shrink-0" onClick={() => setMobileMenuOpen(false)}>
+          <Link to={isStaffWorkspace ? staffHomePath : '/'} className="flex items-center space-x-3 group shrink-0" onClick={() => setMobileMenuOpen(false)}>
             <div className="w-9 h-9 sm:w-11 sm:h-11 bg-champion-red rounded-lg flex items-center justify-center font-black text-lg sm:text-xl tracking-tighter text-white shadow-lg group-hover:scale-105 transition-all">
               CC
             </div>

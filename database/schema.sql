@@ -100,7 +100,7 @@ CREATE INDEX IF NOT EXISTS idx_password_resets_user_used
 CREATE TABLE IF NOT EXISTS membership_plans (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    tier membership_tier NOT NULL UNIQUE,
+    tier VARCHAR(32) NOT NULL UNIQUE,
     monthly_fee NUMERIC(10, 2) NOT NULL,
     court_discount_pct NUMERIC(5, 2) NOT NULL DEFAULT 0.00, -- e.g. 100.00 for free court access or 20.00
     shop_discount_pct NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
@@ -298,12 +298,17 @@ CREATE TABLE IF NOT EXISTS cafe_orders (
     table_id INT REFERENCES dining_tables(id) ON DELETE SET NULL,
     member_id INT REFERENCES users(id) ON DELETE SET NULL,
     guest_name VARCHAR(100),
+    guest_email VARCHAR(254),
     order_type VARCHAR(20) NOT NULL DEFAULT 'TAB', -- 'TAB', 'INSTANT'
     status tab_status_type NOT NULL DEFAULT 'OPEN',
     kitchen_status kitchen_status_type NOT NULL DEFAULT 'PENDING',
     subtotal NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    membership_discount_pct NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
+    membership_tier VARCHAR(32),
     total_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    receipt_email_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    receipt_emailed_at TIMESTAMPTZ,
     opened_by_staff_id INT NOT NULL REFERENCES users(id),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     settled_at TIMESTAMPTZ
@@ -404,6 +409,8 @@ CREATE TABLE IF NOT EXISTS invoices (
     tax_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     total_amount NUMERIC(10, 2) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PAID', -- 'PAID', 'PENDING', 'VOID'
+    receipt_email_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    receipt_emailed_at TIMESTAMPTZ,
     due_date DATE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );

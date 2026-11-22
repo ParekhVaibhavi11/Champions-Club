@@ -24,11 +24,20 @@ import {
   Zap
 } from 'lucide-react';
 
+const MEMBERSHIP_WHATSAPP_NUMBER = '919724484129';
+
 export const Plans = () => {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [memberProfile, setMemberProfile] = useState(null);
   const [selectedExplorePlan, setSelectedExplorePlan] = useState(null);
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const [purchasePlanId, setPurchasePlanId] = useState('');
+  const [purchaseMonths, setPurchaseMonths] = useState(12);
+  const [purchasePaymentMethod, setPurchasePaymentMethod] = useState('UPI');
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [purchaseError, setPurchaseError] = useState('');
+  const [purchaseReceipt, setPurchaseReceipt] = useState(null);
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -63,6 +72,61 @@ export const Plans = () => {
     Boolean(user?.membership_id) ||
     Boolean(memberProfile?.membership_id)
   );
+
+  const buildPlanInquiryUrl = (plan) => {
+    const currentPlanLabel = currentTier || 'No active plan';
+    const customerName = user?.full_name || 'A prospective member';
+    const message = `Hello Champions Club, I would like to inquire about the ${hasActiveMembership ? 'switch' : 'purchase'} to the ${plan?.name || plan?.tier || 'membership'} plan. Current plan: ${currentPlanLabel}. Name: ${customerName}${user?.email ? `. Email: ${user.email}` : ''}.`;
+    return `https://wa.me/${MEMBERSHIP_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  };
+
+  const selectedPurchasePlan = plans.find((plan) => String(plan.id) === String(purchasePlanId));
+  const purchaseTotal = Number(selectedPurchasePlan?.monthly_fee || 0) * Number(purchaseMonths);
+
+  const startPurchase = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: '/plans' } } });
+      return;
+    }
+    setPurchasePlanId(String(plans[0]?.id || ''));
+    setPurchaseError('');
+    setPurchaseOpen(true);
+  };
+
+  const completePurchase = async (event) => {
+    event.preventDefault();
+    if (!selectedPurchasePlan) {
+      setPurchaseError('Choose a membership plan to continue.');
+      return;
+    }
+    setPurchaseLoading(true);
+    setPurchaseError('');
+    try {
+      const response = await membershipService.purchaseMembership({
+        planId: Number(purchasePlanId),
+        durationMonths: Number(purchaseMonths),
+        paymentMethod: purchasePaymentMethod,
+      });
+      setPurchaseReceipt(response.data);
+      setPurchaseOpen(false);
+      setMemberProfile((current) => ({
+        ...current,
+        user_id: user.id,
+        membership_id: response.data.membership_id,
+        membership_status: 'ACTIVE',
+        plan_id: response.data.plan_id,
+        plan_name: response.data.plan_name,
+        plan_tier: response.data.plan_tier,
+      }));
+      membershipService.getMemberById(user.id).then((profile) => {
+        if (profile.data) setMemberProfile(profile.data);
+      }).catch(() => {});
+    } catch (error) {
+      setPurchaseError(error.message || 'Could not complete membership purchase.');
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
 
   const generalClubRules = [
     {
@@ -324,27 +388,9 @@ export const Plans = () => {
                         >
                           Explore {plan.tier} Plan
                         </button>
-                        <Link
-                          to="/contact"
-                          className={`w-full py-2 text-center text-[11px] font-bold uppercase tracking-wider block transition-colors ${
-                            isGold ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-champion-dark'
-                          }`}
-                        >
-                          Inquire to Switch Plan
-                        </Link>
                       </>
                     ) : (
                       <>
-                        <Link
-                          to="/contact"
-                          className={`w-full py-4 rounded-xl text-center text-xs font-black uppercase tracking-wider block transition-all shadow-md group-hover:scale-[1.02] ${
-                            isGold
-                              ? 'bg-champion-red hover:bg-champion-red-hover text-white shadow-red-950/60'
-                              : 'bg-champion-dark hover:bg-black text-white'
-                          }`}
-                        >
-                          Inquire for {plan.tier} Membership
-                        </Link>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -363,6 +409,75 @@ export const Plans = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        <section className="mx-auto mt-8 max-w-3xl rounded-2xl border bg-white p-6 text-center shadow-sm">
+          <h2 className="text-xl font-black uppercase text-champion-dark">
+            {hasActiveMembership ? 'Want to change your membership?' : 'Ready to join Champions Club?'}
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            {hasActiveMembership
+              ? `Your ${currentTier} plan is active. Contact us to discuss switching to another plan.`
+              : 'Choose a plan and duration, then pay by cash, card, or UPI. Your membership receipt will be emailed.'}
+          </p>
+          {hasActiveMembership ? (
+            <a href={buildPlanInquiryUrl(null)} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-champion-red px-7 py-3.5 text-xs font-black uppercase tracking-wide text-white shadow-md hover:bg-champion-red-hover">
+              Inquire to Switch Plan <ArrowRight className="h-4 w-4" />
+            </a>
+          ) : (
+            <button type="button" onClick={startPurchase} disabled={!plans.length} className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl bg-champion-red px-7 py-3.5 text-xs font-black uppercase tracking-wide text-white shadow-md hover:bg-champion-red-hover disabled:opacity-50">
+              {isAuthenticated ? 'Choose a Plan & Purchase' : 'Sign In to Purchase a Plan'} <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
+        </section>
+
+        {purchaseError && !purchaseOpen && <div className="mx-auto max-w-3xl rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{purchaseError}</div>}
+
+        {purchaseReceipt && (
+          <section id="membership-payment-slip" className="mx-auto mt-8 max-w-3xl rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-950">
+            <style>{`@media print { body * { visibility: hidden !important; } #membership-payment-slip, #membership-payment-slip * { visibility: visible !important; } #membership-payment-slip { position: absolute; inset: 0 auto auto 0; width: 100%; padding: 24px; background: white; } #membership-payment-slip button { display: none !important; } }`}</style>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div><h2 className="text-lg font-black uppercase">Membership payment complete</h2><p className="text-sm">{purchaseReceipt.invoice_no} · {purchaseReceipt.plan_name} ({purchaseReceipt.plan_tier})</p></div>
+              <button type="button" onClick={() => window.print()} className="rounded-lg bg-champion-dark px-4 py-2 text-xs font-bold text-white">Print Payment Slip</button>
+            </div>
+            <div className="mt-4 grid gap-2 rounded-xl bg-white p-4 text-sm sm:grid-cols-2">
+              <p><strong>Member:</strong> {purchaseReceipt.customer_name}</p><p><strong>Email:</strong> {purchaseReceipt.customer_email}</p>
+              <p><strong>Duration:</strong> {purchaseReceipt.duration_months} month(s)</p><p><strong>Payment:</strong> {purchaseReceipt.payment_method}</p>
+              <p><strong>Valid from:</strong> {new Date(purchaseReceipt.start_date).toLocaleDateString('en-IN')}</p><p><strong>Valid until:</strong> {new Date(purchaseReceipt.end_date).toLocaleDateString('en-IN')}</p>
+              <p><strong>Payment reference:</strong> {purchaseReceipt.payment_no}</p><p><strong>Receipt email:</strong> {purchaseReceipt.receipt_email_status}</p>
+              <p className="text-base font-black sm:col-span-2">Total paid: ₹{Number(purchaseReceipt.total_amount).toFixed(2)}</p>
+            </div>
+          </section>
+        )}
+
+        {purchaseOpen && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !purchaseLoading) setPurchaseOpen(false); }}>
+            <form onSubmit={completePurchase} className="w-full max-w-lg space-y-5 rounded-2xl bg-white p-6 shadow-2xl">
+              <div><p className="text-xs font-black uppercase tracking-widest text-champion-red">Membership checkout</p><h2 className="mt-1 text-2xl font-black uppercase">Choose your plan</h2><p className="mt-1 text-sm text-gray-500">Payment activates your plan and creates an emailed receipt.</p></div>
+              {purchaseError && <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{purchaseError}</div>}
+              <label className="block text-xs font-bold text-gray-600">Membership Plan
+                <select value={purchasePlanId} onChange={(event) => setPurchasePlanId(event.target.value)} required className="mt-1 w-full rounded-lg border p-3 text-sm">
+                  <option value="" disabled>Select a plan</option>
+                  {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name} · ₹{Number(plan.monthly_fee).toFixed(2)}/month</option>)}
+                </select>
+              </label>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-xs font-bold text-gray-600">Duration
+                  <select value={purchaseMonths} onChange={(event) => setPurchaseMonths(Number(event.target.value))} className="mt-1 w-full rounded-lg border p-3 text-sm">
+                    {[1, 6, 12].map((months) => <option key={months} value={months}>{months} month{months > 1 ? 's' : ''}</option>)}
+                  </select>
+                </label>
+                <label className="block text-xs font-bold text-gray-600">Payment Method
+                  <select value={purchasePaymentMethod} onChange={(event) => setPurchasePaymentMethod(event.target.value)} className="mt-1 w-full rounded-lg border p-3 text-sm">
+                    <option value="UPI">UPI</option><option value="CARD">Card</option><option value="CASH">Cash</option>
+                  </select>
+                </label>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-gray-50 p-4"><span className="text-sm font-bold">Total due</span><span className="text-xl font-black text-champion-red">₹{purchaseTotal.toFixed(2)}</span></div>
+              <p className="text-xs text-gray-500">By confirming, you authorize this payment method. The purchase is recorded as paid in the club ledger.</p>
+              <div className="flex justify-end gap-3"><button type="button" disabled={purchaseLoading} onClick={() => setPurchaseOpen(false)} className="rounded-lg border px-4 py-2.5 text-sm font-bold text-gray-600">Cancel</button><button type="submit" disabled={purchaseLoading || !selectedPurchasePlan} className="rounded-lg bg-champion-red px-5 py-2.5 text-sm font-black text-white disabled:opacity-50">{purchaseLoading ? 'Processing…' : 'Pay & Activate Plan'}</button></div>
+            </form>
           </div>
         )}
 
@@ -550,13 +665,13 @@ export const Plans = () => {
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                 ) : (
-                  <Link
-                    to="/contact"
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-champion-red hover:bg-champion-red-hover text-white shadow-md flex items-center justify-center space-x-1.5 transition-transform hover:scale-102"
+                  <button
+                    type="button"
+                    onClick={() => setSelectedExplorePlan(null)}
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-champion-dark hover:bg-black text-white shadow-md transition-transform hover:scale-102"
                   >
-                    <span>{hasActiveMembership ? 'Inquire to Switch' : 'Inquire for Membership'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                    Back to Plans
+                  </button>
                 )}
               </div>
 

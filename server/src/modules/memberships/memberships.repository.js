@@ -22,6 +22,50 @@ export const getAllPlans = async () => {
   return result.rows;
 };
 
+export const getAllPlansForAdmin = async () => {
+  const result = await pool.query(`
+    SELECT id, name, tier, monthly_fee, court_discount_pct, shop_discount_pct,
+           cafe_discount_pct, free_court_hours_per_month, max_daily_sessions,
+           description, is_active
+    FROM membership_plans
+    ORDER BY monthly_fee DESC, name;
+  `);
+  return result.rows;
+};
+
+export const createMembershipPlan = async (plan) => {
+  const result = await pool.query(`
+    INSERT INTO membership_plans (
+      name, tier, monthly_fee, court_discount_pct, shop_discount_pct,
+      cafe_discount_pct, free_court_hours_per_month, max_daily_sessions,
+      description, is_active
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    RETURNING id, name, tier, monthly_fee, court_discount_pct, shop_discount_pct,
+              cafe_discount_pct, free_court_hours_per_month, max_daily_sessions,
+              description, is_active;
+  `, [plan.name, plan.tier, plan.monthly_fee, plan.court_discount_pct, plan.shop_discount_pct,
+      plan.cafe_discount_pct, plan.free_court_hours_per_month, plan.max_daily_sessions,
+      plan.description, plan.is_active]);
+  return result.rows[0];
+};
+
+export const updateMembershipPlan = async (planId, plan) => {
+  const result = await pool.query(`
+    UPDATE membership_plans SET
+      name = $2, tier = $3, monthly_fee = $4, court_discount_pct = $5,
+      shop_discount_pct = $6, cafe_discount_pct = $7,
+      free_court_hours_per_month = $8, max_daily_sessions = $9,
+      description = $10, is_active = $11
+    WHERE id = $1
+    RETURNING id, name, tier, monthly_fee, court_discount_pct, shop_discount_pct,
+              cafe_discount_pct, free_court_hours_per_month, max_daily_sessions,
+              description, is_active;
+  `, [planId, plan.name, plan.tier, plan.monthly_fee, plan.court_discount_pct,
+      plan.shop_discount_pct, plan.cafe_discount_pct, plan.free_court_hours_per_month,
+      plan.max_daily_sessions, plan.description, plan.is_active]);
+  return result.rows[0] || null;
+};
+
 export const getPlanById = async (planId) => {
   const query = `
     SELECT * FROM membership_plans WHERE id = $1 AND is_active = TRUE;
@@ -269,4 +313,102 @@ export const assignPlanToExistingMember = async ({ userId, planId, durationMonth
   } finally {
     client.release();
   }
+};
+
+export const purchaseMembership = async ({ userId, planId, durationMonths, paymentMethod }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const memberResult = await client.query(
+      `SELECT u.id, u.full_name, u.email, mp.date_of_birth
+       FROM users u JOIN member_profiles mp ON mp.user_id = u.id
+       WHERE u.id = $1 AND u.role = 'member'
+       FOR UPDATE OF u`,
+      [userId]
+    );
+    const member = memberResult.rows[0];
+    if (!member) throw Object.assign(new Error('Member account not found.'), { statusCode: 404 });
+
+    const activeResult = await client.query(
+      `SELECT id FROM memberships
+       WHERE user_id = $1 AND status = 'ACTIVE' AND end_date >= CURRENT_DATE
+       ORDER BY end_date DESC LIMIT 1 FOR UPDATE`,
+      [userId]
+    );
+    if (activeResult.rows[0]) {
+      throw Object.assign(new Error('You already have an active membership. Contact the front desk to extend or change your plan.'), { statusCode: 409 });
+    }
+
+    const planResult = await client.query(
+      'SELECT id, name, tier, monthly_fee FROM membership_plans WHERE id = $1 AND is_active = TRUE',
+      [planId]
+    );
+    const plan = planResult.rows[0];
+    if (!plan) throw Object.assign(new Error('Selected membership plan is unavailable.'), { statusCode: 400 });
+    if (plan.tier === 'JUNIOR' && member.date_of_birth) {
+      const birthDate = new Date(member.date_of_birth);
+      const age = new Date().getFullYear() - birthDate.getFullYear();
+      if (age >= 18) throw Object.assign(new Error('Junior membership is only available to athletes under 18.'), { statusCode: 400 });
+    }
+
+    const membershipResult = await client.query(
+      `INSERT INTO memberships (user_id, plan_id, start_date, end_date, status, auto_renew)
+       VALUES ($1, $2, CURRENT_DATE, CURRENT_DATE + ($3 || ' months')::INTERVAL, 'ACTIVE', FALSE)
+       RETURNING id, start_date, end_date, status`,
+      [userId, planId, durationMonths]
+    );
+    const membership = membershipResult.rows[0];
+    const total = Number(plan.monthly_fee) * durationMonths;
+    const stamp = Date.now();
+    const invoiceNo = `INV-MEM-${membership.id}-${stamp}`;
+    const invoiceResult = await client.query(
+      `INSERT INTO invoices (invoice_no, user_id, source_type, source_id, subtotal, total_amount, status)
+       VALUES ($1, $2, 'MEMBERSHIP', $3, $4, $4, 'PAID') RETURNING id`,
+      [invoiceNo, userId, membership.id, total]
+    );
+    const paymentNo = `PAY-MEM-${membership.id}-${stamp}`;
+    await client.query(
+      `INSERT INTO payments (payment_no, invoice_id, source_type, source_id, amount, payment_method, status)
+       VALUES ($1, $2, 'MEMBERSHIP', $3, $4, $5, 'SUCCESS')`,
+      [paymentNo, invoiceResult.rows[0].id, membership.id, total, paymentMethod]
+    );
+    await client.query('COMMIT');
+    return {
+      user_id: userId,
+      customer_name: member.full_name,
+      customer_email: member.email,
+      membership_id: membership.id,
+      plan_id: plan.id,
+      plan_name: plan.name,
+      plan_tier: plan.tier,
+      duration_months: durationMonths,
+      monthly_fee: Number(plan.monthly_fee),
+      subtotal: total,
+      total_amount: total,
+      payment_method: paymentMethod,
+      payment_no: paymentNo,
+      invoice_id: invoiceResult.rows[0].id,
+      invoice_no: invoiceNo,
+      start_date: membership.start_date,
+      end_date: membership.end_date,
+      status: 'PAID',
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
+export const updateMembershipReceiptEmailStatus = async (invoiceId, status) => {
+  const result = await pool.query(
+    `UPDATE invoices
+     SET receipt_email_status = $2,
+         receipt_emailed_at = CASE WHEN $2 = 'SENT' THEN NOW() ELSE receipt_emailed_at END
+     WHERE id = $1
+     RETURNING receipt_email_status, receipt_emailed_at`,
+    [invoiceId, status]
+  );
+  return result.rows[0];
 };

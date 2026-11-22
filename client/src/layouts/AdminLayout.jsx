@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
-import { BarChart3, DollarSign, UserCheck, Map, Coffee } from 'lucide-react';
+import { BarChart3, DollarSign, UserCheck, Map, Coffee, Award } from 'lucide-react';
 
 export const AdminLayout = ({ children }) => {
   const location = useLocation();
@@ -11,6 +11,7 @@ export const AdminLayout = ({ children }) => {
     { label: 'Court Management', path: '/admin/courts', icon: Map },
     { label: 'Café & Bar', path: '/admin/cafe', icon: Coffee },
     { label: 'Finance & Invoices', path: '/admin/finance', icon: DollarSign },
+    { label: 'Membership Plans', path: '/admin/membership-plans', icon: Award },
     { label: 'Staff HR & Shifts', path: '/admin/hr', icon: UserCheck },
   ];
 

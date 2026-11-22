@@ -25,12 +25,13 @@ import { MemberDirectory } from '../features/frontdesk/MemberDirectory';
 import { ShopPOS } from '../features/shop/ShopPOS';
 import { AdminDashboard } from '../features/finance/AdminDashboard';
 import { CourtManagement } from '../features/courts/CourtManagement';
-import { InventoryManager } from '../features/shop/InventoryManager';
+import { InventoryManager, InventoryMovements } from '../features/shop/InventoryManager';
 import { CafePOS } from '../features/cafe/CafePOS';
 import { KitchenQueue } from '../features/cafe/KitchenQueue';
 import { ShopCatalog } from '../features/shop/ShopCatalog';
 import { CafeMenu } from '../features/cafe/CafeMenu';
 import { AdminFinance } from '../features/finance/AdminFinance';
+import { AdminMembershipPlans } from '../features/finance/AdminMembershipPlans';
 import { AdminHr } from '../features/finance/AdminHr';
 import { ShopPageLayout } from '../layouts/ShopPageLayout';
 import { CafePageLayout } from '../layouts/CafePageLayout';
@@ -94,6 +95,7 @@ export const AppRoutes = () => {
         }
       >
         <Route path="shop-pos" element={<ShopPOS />} />
+        <Route path="inventory/movements" element={<InventoryMovements />} />
         <Route path="inventory" element={<InventoryManager />} />
         <Route path="cafe-pos" element={<CafePOS />} />
         <Route path="kitchen" element={<KitchenQueue />} />
@@ -112,6 +114,7 @@ export const AppRoutes = () => {
         <Route path="courts" element={<CourtManagement />} />
         <Route path="cafe" element={<CafePOS />} />
         <Route path="finance" element={<AdminFinance />} />
+        <Route path="membership-plans" element={<AdminMembershipPlans />} />
         <Route path="hr" element={<AdminHr />} />
       </Route>
 
