@@ -10,7 +10,6 @@ import {
   ArrowRight, 
   UserCheck, 
   Flame, 
-  ArrowLeft, 
   Shield, 
   User, 
   Phone,
@@ -204,7 +203,7 @@ export const Login = () => {
         <div className="lg:col-span-5 bg-black/60 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-neutral-800">
           <div>
             <Link to="/" className="inline-flex items-center text-xs font-semibold text-gray-400 hover:text-white mb-6 transition-colors">
-              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" /> Back to Arenas
+              Champions Club Home
             </Link>
 
             <div className="flex items-center space-x-3 mb-4">
@@ -455,7 +454,7 @@ export const Login = () => {
                   onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
                   className="w-full py-2.5 text-xs font-bold text-gray-500 hover:text-champion-dark text-center"
                 >
-                  Remembered your password? Back to Sign In
+                  Remembered your password? Sign In
                 </button>
               </div>
             </form>
@@ -529,7 +528,7 @@ export const Login = () => {
                     onClick={() => { setMode('login'); setError(''); setSuccessMsg(''); }}
                     className="text-gray-500 hover:text-champion-dark"
                   >
-                    Back to Sign In
+                    Sign In
                   </button>
                 </div>
               </div>

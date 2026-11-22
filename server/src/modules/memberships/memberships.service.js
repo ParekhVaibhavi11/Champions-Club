@@ -113,3 +113,61 @@ export const renewMembership = async (membershipId, months = 1) => {
 
   return updated;
 };
+
+export const changeMemberPlan = async (userId, { planId, durationMonths = 12, action }) => {
+  const normalizedPlanId = Number(planId);
+  const normalizedDuration = Number(durationMonths);
+  const normalizedAction = String(action || '').toUpperCase();
+
+  if (!Number.isInteger(normalizedPlanId) || ![1, 6, 12].includes(normalizedDuration) || !['CHOOSE', 'UPGRADE'].includes(normalizedAction)) {
+    const error = new Error('A valid plan, duration (1, 6, or 12 months), and action are required.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const member = await membershipRepo.getMemberDetailsById(userId);
+  if (!member) {
+    const error = new Error('Member profile not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const plan = await membershipRepo.getPlanById(normalizedPlanId);
+  if (!plan) {
+    const error = new Error('Selected membership plan is invalid');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const hasActivePlan = Boolean(member.membership_id && member.membership_status === 'ACTIVE');
+  if (normalizedAction === 'CHOOSE' && hasActivePlan) {
+    const error = new Error('This member already has an active plan. Use the upgrade or extend action.');
+    error.statusCode = 409;
+    throw error;
+  }
+  if (normalizedAction === 'UPGRADE' && !hasActivePlan) {
+    const error = new Error('This member has no active plan to upgrade. Choose a plan instead.');
+    error.statusCode = 409;
+    throw error;
+  }
+  if (normalizedAction === 'UPGRADE' && Number(plan.monthly_fee) <= Number(member.monthly_fee)) {
+    const error = new Error('Upgrade must use a plan with a higher monthly fee.');
+    error.statusCode = 400;
+    throw error;
+  }
+  if (plan.tier === 'JUNIOR' && member.date_of_birth) {
+    const birthYear = new Date(member.date_of_birth).getFullYear();
+    if (new Date().getFullYear() - birthYear >= 18) {
+      const error = new Error('Junior Tier is reserved exclusively for athletes under 18 years old');
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  return membershipRepo.assignPlanToExistingMember({
+    userId,
+    planId: normalizedPlanId,
+    durationMonths: normalizedDuration,
+    action: normalizedAction,
+  });
+};

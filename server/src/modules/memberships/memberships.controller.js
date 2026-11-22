@@ -49,3 +49,12 @@ export const renewMembership = async (req, res, next) => {
     next(err);
   }
 };
+
+export const changeMemberPlan = async (req, res, next) => {
+  try {
+    const result = await membershipService.changeMemberPlan(req.params.id, req.body);
+    return successResponse(res, result, 'Member plan activated successfully');
+  } catch (err) {
+    next(err);
+  }
+};

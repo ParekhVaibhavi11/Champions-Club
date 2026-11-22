@@ -244,12 +244,18 @@ CREATE TABLE IF NOT EXISTS shop_orders (
     id SERIAL PRIMARY KEY,
     receipt_no VARCHAR(50) UNIQUE NOT NULL,
     customer_id INT REFERENCES users(id) ON DELETE SET NULL,
+    customer_name VARCHAR(150) NOT NULL,
+    customer_email VARCHAR(254) NOT NULL,
     cashier_id INT NOT NULL REFERENCES users(id),
     subtotal NUMERIC(10, 2) NOT NULL,
     discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    membership_discount_pct NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
+    membership_tier VARCHAR(32),
     total_amount NUMERIC(10, 2) NOT NULL,
     payment_method payment_method_type NOT NULL,
     payment_status payment_status_type NOT NULL DEFAULT 'SUCCESS',
+    receipt_email_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    receipt_emailed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
