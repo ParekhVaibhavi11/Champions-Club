@@ -101,8 +101,8 @@ export const calculateAvailability = async (courtId, dateStr) => {
     const slotStart = new Date(slot.startTime);
     const slotEnd = new Date(slot.endTime);
 
-    // 1. Check if slot has already passed
-    const isPast = slotStart < now;
+    // A booked slot remains occupied while it is in progress and becomes past after it ends.
+    const isPast = slotEnd <= now;
 
     // 2. Check if any database allocation overlaps [slotStart, slotEnd)
     // Two intervals [A_start, A_end) and [B_start, B_end) overlap if (A_start < B_end && B_start < A_end)
@@ -115,7 +115,9 @@ export const calculateAvailability = async (courtId, dateStr) => {
     let status = 'AVAILABLE';
     let allocationType = null;
 
-    if (overlappingAllocation) {
+    if (isPast) {
+      status = 'PAST';
+    } else if (overlappingAllocation) {
       allocationType = overlappingAllocation.type;
       if (overlappingAllocation.type === 'SOCIAL_PLAY') {
         status = 'SOCIAL';
@@ -124,8 +126,6 @@ export const calculateAvailability = async (courtId, dateStr) => {
       } else {
         status = 'BOOKED';
       }
-    } else if (isPast) {
-      status = 'PAST';
     }
 
     return {

@@ -51,10 +51,10 @@ export const Navbar = () => {
 
   return (
     <header className="bg-champion-dark/95 backdrop-blur-md text-white border-b border-neutral-800 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
         
         {/* Left Side: Back Arrow Button (on subpages) + Brand Logo */}
-        <div className="flex items-center space-x-2 sm:space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
           {!isHome && (
             <button
               onClick={handleBack}
@@ -67,12 +67,12 @@ export const Navbar = () => {
           )}
 
           {/* Brand Logo */}
-          <Link to="/" className="flex items-center space-x-3 group" onClick={() => setMobileMenuOpen(false)}>
+          <Link to="/" className="flex items-center space-x-3 group shrink-0" onClick={() => setMobileMenuOpen(false)}>
             <div className="w-9 h-9 sm:w-11 sm:h-11 bg-champion-red rounded-lg flex items-center justify-center font-black text-lg sm:text-xl tracking-tighter text-white shadow-lg group-hover:scale-105 transition-all">
               CC
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold tracking-wider text-sm sm:text-lg text-white uppercase leading-none">
+              <span className="font-extrabold tracking-wider text-sm sm:text-lg text-white uppercase leading-none whitespace-nowrap">
                 Champions<span className="text-champion-red">Club</span>
               </span>
               <span className="text-[9px] sm:text-[11px] text-gray-400 tracking-widest uppercase mt-0.5 font-medium">
@@ -83,14 +83,14 @@ export const Navbar = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-8 text-sm font-semibold tracking-wide text-gray-300">
+        <nav className="hidden xl:flex flex-1 min-w-0 items-center justify-center gap-4 2xl:gap-8 px-2 text-sm font-semibold tracking-wide text-gray-300">
           {navLinks.map((link) => {
             const active = location.pathname === link.path || (link.label === 'Café & Bar' && (location.pathname === '/cafe' || location.pathname === '/member/cafe' || location.pathname === '/admin/cafe'));
             return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`transition-colors hover:text-white ${
+                className={`transition-colors hover:text-white whitespace-nowrap shrink-0 ${
                   active ? 'text-champion-red font-bold' : ''
                 }`}
               >
@@ -101,7 +101,7 @@ export const Navbar = () => {
         </nav>
 
         {/* Right CTA / User Section */}
-        <div className="hidden sm:flex items-center space-x-3">
+        <div className="hidden xl:flex items-center space-x-3 shrink-0">
           {isAdmin && (
             <Link
               to="/admin/dashboard"
@@ -146,7 +146,7 @@ export const Navbar = () => {
         </div>
 
         {/* Mobile Hamburger Button */}
-        <div className="flex sm:hidden items-center space-x-2">
+        <div className="flex xl:hidden items-center space-x-2 shrink-0">
           {isAuthenticated && user && (
             <button
               onClick={handleLogout}
@@ -168,7 +168,7 @@ export const Navbar = () => {
 
       {/* Mobile Drawer Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-neutral-950 border-b border-neutral-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top-2 duration-200">
+        <div className="xl:hidden bg-neutral-950 border-b border-neutral-800 px-4 pt-3 pb-6 space-y-3 animate-in slide-in-from-top-2 duration-200">
           {isAuthenticated && user && (
             <div className="p-3 mb-3 bg-neutral-900 rounded-lg border border-neutral-800 flex items-center justify-between">
               <div>

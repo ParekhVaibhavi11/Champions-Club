@@ -49,7 +49,7 @@ export const trialsRepository = {
           status, preferred_date, preferred_time, participants_count,
           notes, reference_code, secret_token, fee_charged, visit_count,
           payment_method, payment_status, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, 'GUEST_DEMO_BOOKING', 'REQUESTED', $5, $6, $7, $8, $9, $10, $11, $12, $13, 'PAID', NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, 'GUEST_DEMO_BOOKING', 'REQUESTED', $5, $6, $7, $8, $9, $10, $11, $12, $13, 'SUCCESS', NOW(), NOW())
         RETURNING *
       `;
       const leadRes = await client.query(leadQuery, [

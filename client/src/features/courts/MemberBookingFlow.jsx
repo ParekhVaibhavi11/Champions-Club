@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { courtService } from '../../services/courtService';
 import { bookingService } from '../../services/bookingService';
@@ -9,7 +9,6 @@ import { Input } from '../../components/Input';
 import { 
   Calendar, 
   Clock, 
-  ArrowLeft, 
   CheckCircle, 
   XCircle, 
   ShieldCheck, 
@@ -21,7 +20,6 @@ import {
 
 export const MemberBookingFlow = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [sports, setSports] = useState([]);
@@ -33,7 +31,13 @@ export const MemberBookingFlow = () => {
     searchParams.get('court_id') ? parseInt(searchParams.get('court_id'), 10) : null
   );
   const [selectedDate, setSelectedDate] = useState(
-    searchParams.get('date') || new Date().toISOString().split('T')[0]
+    searchParams.get('date') || (() => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    })()
   );
   const [selectedSlot, setSelectedSlot] = useState(null);
 
@@ -152,17 +156,6 @@ export const MemberBookingFlow = () => {
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
       
-      {/* Back Link Breadcrumb */}
-      <div>
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-champion-red uppercase tracking-wider transition-colors group p-1.5 -ml-1.5 rounded-lg hover:bg-gray-200/60"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-          <span>Back</span>
-        </button>
-      </div>
-
       {/* Header Banner */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

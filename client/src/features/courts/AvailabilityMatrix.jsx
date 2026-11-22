@@ -18,6 +18,13 @@ import {
   Sparkles
 } from 'lucide-react';
 
+const toLocalDateString = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const AvailabilityMatrix = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -40,7 +47,7 @@ export const AvailabilityMatrix = () => {
   );
   const [selectedCourtId, setSelectedCourtId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0]
+    toLocalDateString(new Date())
   );
 
   // Availability State
@@ -90,18 +97,20 @@ export const AvailabilityMatrix = () => {
   useEffect(() => {
     if (!selectedCourtId) return;
 
-    const fetchMatrix = async () => {
-      setMatrixLoading(true);
+    const fetchMatrix = async (showLoading = true) => {
+      if (showLoading) setMatrixLoading(true);
       try {
         const res = await courtService.getCourtAvailability(selectedCourtId, selectedDate);
         if (res.data) setAvailabilityData(res.data);
       } catch (err) {
         console.error(err);
       } finally {
-        setMatrixLoading(false);
+        if (showLoading) setMatrixLoading(false);
       }
     };
     fetchMatrix();
+    const refreshInterval = window.setInterval(() => fetchMatrix(false), 30_000);
+    return () => window.clearInterval(refreshInterval);
   }, [selectedCourtId, selectedDate]);
 
   const activeSportCourts = courts.filter((c) => c.sport_id === selectedSportId);
@@ -111,7 +120,7 @@ export const AvailabilityMatrix = () => {
   const getQuickDate = (offsetDays) => {
     const d = new Date();
     d.setDate(d.getDate() + offsetDays);
-    return d.toISOString().split('T')[0];
+    return toLocalDateString(d);
   };
 
   const todayStr = getQuickDate(0);

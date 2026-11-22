@@ -46,7 +46,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE lead_status_type AS ENUM ('NEW', 'CONTACTED', 'QUOTED', 'CONVERTED', 'LOST');
+    CREATE TYPE lead_status_type AS ENUM ('NEW', 'CONTACTED', 'QUOTED', 'CONVERTED', 'LOST', 'REQUESTED', 'CONFIRMED', 'RESCHEDULED', 'COMPLETED', 'CANCELLED', 'NO_SHOW');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- 3. IDENTITY & USERS
@@ -323,6 +323,18 @@ CREATE TABLE IF NOT EXISTS leads (
     sport_interest VARCHAR(100),
     inquiry_type VARCHAR(50) DEFAULT 'TRIAL_SESSION', -- 'TRIAL_SESSION', 'MEMBERSHIP', 'CORPORATE'
     status lead_status_type NOT NULL DEFAULT 'NEW',
+    reference_code VARCHAR(64) UNIQUE,
+    preferred_date DATE,
+    preferred_time TIME,
+    participants_count INT NOT NULL DEFAULT 1,
+    court_id INT REFERENCES courts(id),
+    booking_id INT REFERENCES bookings(id),
+    secret_token VARCHAR(64),
+    fee_charged NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    visit_count INT NOT NULL DEFAULT 1,
+    payment_method payment_method_type,
+    payment_status payment_status_type,
+    invoice_id INT,
     notes TEXT,
     assigned_staff_id INT REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
-import { LayoutDashboard, Calendar, Users, ShoppingBag, CreditCard, Coffee } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard } from 'lucide-react';
 
 export const MemberLayout = ({ children }) => {
   const location = useLocation();
@@ -9,10 +9,7 @@ export const MemberLayout = ({ children }) => {
   const navItems = [
     { label: 'Overview', path: '/member/dashboard', icon: LayoutDashboard },
     { label: 'Digital Pass & Plan', path: '/member/membership', icon: CreditCard },
-    { label: 'Book Court', path: '/member/book-court', icon: Calendar },
     { label: 'Friday Social Play', path: '/member/social-play', icon: Users },
-    { label: 'Café & Bar', path: '/member/cafe', icon: Coffee },
-    { label: 'Gear Shop', path: '/shop', icon: ShoppingBag },
   ];
 
   return (

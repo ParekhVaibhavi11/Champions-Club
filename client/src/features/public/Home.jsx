@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { membershipService } from '../../services/membershipService';
 import { 
   ArrowRight, 
   Calendar, 
@@ -20,6 +21,19 @@ import {
 } from 'lucide-react';
 
 export const Home = () => {
+  const [planPrices, setPlanPrices] = useState({});
+
+  useEffect(() => {
+    membershipService.getPlans()
+      .then((res) => {
+        const prices = Object.fromEntries(
+          (res.data || []).map((plan) => [plan.tier.toUpperCase(), Number(plan.monthly_fee)])
+        );
+        setPlanPrices(prices);
+      })
+      .catch((err) => console.error('Failed to load membership prices:', err));
+  }, []);
+
   const sports = [
     {
       id: 'tennis',
@@ -59,7 +73,6 @@ export const Home = () => {
     {
       tier: 'GOLD',
       title: 'Gold VIP Pass',
-      fee: '₹9,999',
       period: '/ month',
       popular: true,
       features: [
@@ -74,7 +87,6 @@ export const Home = () => {
     {
       tier: 'SILVER',
       title: 'Silver Standard',
-      fee: '₹4,999',
       period: '/ month',
       popular: false,
       features: [
@@ -89,7 +101,6 @@ export const Home = () => {
     {
       tier: 'JUNIOR',
       title: 'Junior Under-18',
-      fee: '₹2,999',
       period: '/ month',
       popular: false,
       features: [
@@ -336,7 +347,11 @@ export const Home = () => {
                 <h3 className="text-2xl font-black uppercase tracking-tight">{plan.title}</h3>
                 
                 <div className="mt-4 flex items-baseline">
-                  <span className="text-4xl sm:text-5xl font-black text-champion-red">{plan.fee}</span>
+                  <span className="text-4xl sm:text-5xl font-black text-champion-red">
+                    {Number.isFinite(planPrices[plan.tier])
+                      ? `₹${planPrices[plan.tier].toLocaleString('en-IN')}`
+                      : '—'}
+                  </span>
                   <span className={`ml-2 text-xs font-bold uppercase tracking-wider ${
                     plan.popular ? 'text-gray-400' : 'text-gray-500'
                   }`}>
