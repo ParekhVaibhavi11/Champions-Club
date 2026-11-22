@@ -21,7 +21,8 @@ import {
   DollarSign,
   AlertCircle,
   RefreshCw,
-  X
+  X,
+  Receipt
 } from 'lucide-react';
 
 export const CafeMenu = () => {
@@ -177,7 +178,7 @@ export const CafeMenu = () => {
           guest_name: user?.full_name || null,
           items: itemsPayload,
         });
-        const orderNo = res.data?.order_no || 'OPEN';
+        const orderNo = res.data?.data?.order_no || res.data?.order_no || 'OPEN';
         setOrderMessage(`Tab #${orderNo} opened successfully at Table ${selectedTable?.table_number}! Order sent to kitchen queue.`);
       }
       setCart({});
@@ -397,7 +398,7 @@ export const CafeMenu = () => {
       )}
 
       {/* Main Interactive Grid: Menu Items + Live Ordering Cart Aside */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8 items-start">
+      <div id="cafe-menu-grid" className="grid grid-cols-1 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
         
         {/* Left Column: Category Filters & Offerings Grid */}
         <div className="space-y-6">
@@ -538,8 +539,12 @@ export const CafeMenu = () => {
         </div>
 
         {/* Right Column: Live Table Tab & Cart Aside */}
-        <aside className="sticky top-24 bg-white rounded-3xl p-6 border border-gray-200 shadow-lg space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <aside
+          id="table-cart-aside"
+          className="sticky top-20 bg-white rounded-3xl p-5 sm:p-6 border border-gray-200 shadow-xl flex flex-col max-h-[calc(100vh-5.5rem)]"
+        >
+          {/* Aside Header */}
+          <div className="flex items-center justify-between pb-3 border-b border-gray-100 shrink-0">
             <div className="flex items-center space-x-2">
               <ShoppingBag className="w-5 h-5 text-champion-red" />
               <h3 className="font-black uppercase text-champion-dark tracking-tight">
@@ -550,174 +555,219 @@ export const CafeMenu = () => {
               <button
                 type="button"
                 onClick={clearCart}
-                className="text-[11px] font-bold text-gray-400 hover:text-champion-red transition-colors"
+                className="text-[11px] font-bold text-gray-400 hover:text-champion-red transition-colors cursor-pointer"
               >
                 Clear Cart
               </button>
             )}
           </div>
 
-          {/* Selected Table Info */}
-          <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between">
-            <div>
-              <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block">
-                Selected Table
-              </span>
-              <span className="text-sm font-black text-champion-dark">
-                {selectedTable ? `${selectedTable.table_number} (${selectedTable.capacity} Seats)` : 'No Table Selected'}
-              </span>
-            </div>
-            {selectedTable && (
-              <Badge variant={selectedTable.order_id ? 'gold' : 'green'}>
-                {selectedTable.order_id ? 'TAB OPEN' : 'AVAILABLE'}
-              </Badge>
-            )}
-          </div>
-
-          {/* If the table has an open tab already */}
-          {selectedTable?.order_id && (
-            <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-blue-900">Active Tab #{selectedTable.order_no}</span>
-                <span className="font-mono font-black text-blue-900">
-                  ₹{Number(selectedTable.total_amount || 0).toFixed(2)}
+          {/* Scrollable middle container */}
+          <div className="flex-1 overflow-y-auto pr-1 space-y-3.5 my-2 min-h-0">
+            {/* Selected Table Info */}
+            <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block">
+                  Selected Table
+                </span>
+                <span className="text-sm font-black text-champion-dark">
+                  {selectedTable ? `${selectedTable.table_number} (${selectedTable.capacity} Seats)` : 'No Table Selected'}
                 </span>
               </div>
-              <p className="text-[11px] text-blue-700 leading-tight">
-                Order will be served directly at Table {selectedTable.table_number}. Pay when leaving at the front desk.
-              </p>
-            </div>
-          )}
-
-          {/* Cart Items List */}
-          <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-            {cartItems.length === 0 ? (
-              <div className="text-center py-8 text-gray-400 text-xs">
-                <Coffee className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                <p className="font-semibold">Your order cart is empty.</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Click '+ Add' on any menu item above to build your order.</p>
-              </div>
-            ) : (
-              cartItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50">
-                  <div className="flex-1 pr-2">
-                    <p className="font-bold text-champion-dark leading-tight">{item.name}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">
-                      ₹{item.unitPrice.toFixed(2)} × {item.quantity}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => dec(item.id)}
-                      className="w-5 h-5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold"
-                    >
-                      -
-                    </button>
-                    <span className="font-mono font-bold text-xs">{item.quantity}</span>
-                    <button
-                      onClick={() => inc(item.id)}
-                      className="w-5 h-5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold"
-                    >
-                      +
-                    </button>
-                    <span className="font-mono font-black text-champion-dark w-14 text-right">
-                      ₹{item.lineTotal.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Pricing Summary */}
-          {cartItems.length > 0 && (
-            <div className="space-y-2 pt-3 border-t border-gray-100 text-xs font-semibold text-gray-600">
-              <div className="flex justify-between">
-                <span>Items Subtotal</span>
-                <span className="font-mono text-champion-dark">₹{cartSubtotal.toFixed(2)}</span>
-              </div>
-
-              {isMember && discountPct > 0 && cartDiscountAmount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-bold">
-                  <span>{user?.membership_tier || 'Member'} Discount ({discountPct}%)</span>
-                  <span className="font-mono">-₹{cartDiscountAmount.toFixed(2)}</span>
-                </div>
+              {selectedTable && (
+                <Badge variant={selectedTable.order_id ? 'gold' : 'green'}>
+                  {selectedTable.order_id ? 'TAB OPEN' : 'AVAILABLE'}
+                </Badge>
               )}
-
-              <div className="flex justify-between text-base font-black text-champion-dark pt-2 border-t border-gray-200">
-                <span>Total to Order</span>
-                <span className="font-mono text-champion-red">₹{cartFinalTotal.toFixed(2)}</span>
-              </div>
             </div>
-          )}
 
-          {/* Action Button: Send to Kitchen */}
-          {isAuthenticated ? (
+            {/* If the table has an open tab already */}
+            {selectedTable?.order_id && (
+              <div className="p-3 rounded-2xl bg-blue-50 border border-blue-200 space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-blue-900">Active Tab #{selectedTable.order_no}</span>
+                  <span className="font-mono font-black text-blue-900">
+                    ₹{Number(selectedTable.total_amount || 0).toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-[10px] text-blue-700 leading-tight">
+                  Served directly to Table {selectedTable.table_number}. Pay when leaving at front desk.
+                </p>
+              </div>
+            )}
+
+            {/* Cart Items List */}
             <div className="space-y-2">
-              <button
-                type="button"
-                onClick={handlePlaceOrder}
-                disabled={orderSubmitting || cartItems.length === 0 || !selectedTableId}
-                className="w-full py-3.5 rounded-2xl bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-black tracking-wider transition-all shadow-md hover:shadow-red-900/30 disabled:opacity-50 flex items-center justify-center space-x-2 cursor-pointer"
-              >
-                <UtensilsCrossed className="w-4 h-4" />
-                <span>
-                  {orderSubmitting
-                    ? 'Routing to Kitchen...'
-                    : selectedTable?.order_id
-                    ? `Add to Table ${selectedTable?.table_number} Tab`
-                    : `Order to Table ${selectedTable?.table_number || ''} (Pay at Desk)`}
-                </span>
-              </button>
-              <p className="text-[10px] text-gray-500 text-center font-medium">
-                No online payment needed now. Your food will be served at your table, and payment will be collected at the counter.
-              </p>
+              {cartItems.length === 0 ? (
+                <div className="text-center py-6 text-gray-400 text-xs">
+                  <Coffee className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p className="font-semibold">Your order cart is empty.</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">Click '+ Add' on any menu item to build your tab.</p>
+                </div>
+              ) : (
+                cartItems.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between text-xs py-1.5 border-b border-gray-50">
+                    <div className="flex-1 pr-2">
+                      <p className="font-bold text-champion-dark leading-tight">{item.name}</p>
+                      <p className="text-[10px] text-gray-400 font-mono">
+                        ₹{item.unitPrice.toFixed(2)} × {item.quantity}
+                      </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => dec(item.id)}
+                        className="w-5 h-5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold cursor-pointer"
+                      >
+                        -
+                      </button>
+                      <span className="font-mono font-bold text-xs">{item.quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => inc(item.id)}
+                        className="w-5 h-5 rounded bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold cursor-pointer"
+                      >
+                        +
+                      </button>
+                      <span className="font-mono font-black text-champion-dark w-14 text-right">
+                        ₹{item.lineTotal.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          ) : (
-            <Link
-              to="/login"
-              className="w-full py-3.5 rounded-2xl bg-champion-dark hover:bg-black text-white text-xs uppercase font-black tracking-wider transition-all shadow-md text-center block"
-            >
-              Sign In as Member to Order
-            </Link>
-          )}
 
-          {/* Settle Active Tab Option (if table has an active tab) */}
-          {selectedTable?.order_id && (
-            <div className="pt-4 border-t border-gray-200 space-y-3">
-              <span className="text-xs font-black uppercase tracking-wider text-gray-700 block">
-                Settle Open Tab (#{selectedTable.order_no})
-              </span>
-              <div className="grid grid-cols-3 gap-2">
-                {['UPI', 'CARD', 'CASH'].map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    onClick={() => setPaymentMethod(method)}
-                    className={`py-2 text-xs font-extrabold uppercase rounded-xl border transition-all ${
-                      paymentMethod === method
-                        ? 'border-champion-dark bg-champion-dark text-white'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {method}
-                  </button>
-                ))}
+            {/* Pricing Summary */}
+            {cartItems.length > 0 && (
+              <div className="space-y-1.5 pt-2 border-t border-gray-100 text-xs font-semibold text-gray-600">
+                <div className="flex justify-between">
+                  <span>Items Subtotal</span>
+                  <span className="font-mono text-champion-dark">₹{cartSubtotal.toFixed(2)}</span>
+                </div>
+
+                {isMember && discountPct > 0 && cartDiscountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-bold">
+                    <span>{user?.membership_tier || 'Member'} Discount ({discountPct}%)</span>
+                    <span className="font-mono">-₹{cartDiscountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-sm sm:text-base font-black text-champion-dark pt-1.5 border-t border-gray-200">
+                  <span>Total to Order</span>
+                  <span className="font-mono text-champion-red">₹{cartFinalTotal.toFixed(2)}</span>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={handleSettleTab}
-                disabled={orderSubmitting}
-                className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm disabled:opacity-50 flex items-center justify-center space-x-2"
+            )}
+          </div>
+
+          {/* Pinned Bottom Action Area (Always in view without scrolling the browser page) */}
+          <div className="shrink-0 pt-3 border-t border-gray-100 space-y-2">
+            {isAuthenticated ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePlaceOrder}
+                  disabled={orderSubmitting || cartItems.length === 0 || !selectedTableId}
+                  className="w-full py-3.5 rounded-2xl bg-champion-red hover:bg-champion-red-hover text-white text-xs uppercase font-black tracking-wider transition-all shadow-md hover:shadow-red-900/30 disabled:opacity-50 flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <UtensilsCrossed className="w-4 h-4" />
+                  <span>
+                    {orderSubmitting
+                      ? 'Routing to Kitchen...'
+                      : selectedTable?.order_id
+                      ? `Add to Table ${selectedTable?.table_number} Tab`
+                      : `Order to Table ${selectedTable?.table_number || ''} (Pay at Desk)`}
+                  </span>
+                </button>
+                <p className="text-[10px] text-gray-500 text-center font-medium leading-tight">
+                  No advance payment needed. Served to table; settle when departing.
+                </p>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="w-full py-3.5 rounded-2xl bg-champion-dark hover:bg-black text-white text-xs uppercase font-black tracking-wider transition-all shadow-md text-center block"
               >
-                <Receipt className="w-4 h-4 text-emerald-400" />
-                <span>Settle ₹{Number(selectedTable.total_amount || 0).toFixed(2)}</span>
-              </button>
-            </div>
-          )}
+                Sign In as Member to Order
+              </Link>
+            )}
+
+            {/* Settle Active Tab Option (if table has an active tab) */}
+            {selectedTable?.order_id && (
+              <div className="pt-2 border-t border-gray-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-gray-600">
+                    Settle Open Tab (#{selectedTable.order_no})
+                  </span>
+                  <span className="text-xs font-mono font-black text-champion-dark">
+                    ₹{Number(selectedTable.total_amount || 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {['UPI', 'CARD', 'CASH'].map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(method)}
+                      className={`py-1 text-[11px] font-extrabold uppercase rounded-lg border transition-all cursor-pointer ${
+                        paymentMethod === method
+                          ? 'border-champion-dark bg-champion-dark text-white'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSettleTab}
+                  disabled={orderSubmitting}
+                  className="w-full py-2.5 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-black uppercase tracking-wider transition-all shadow-sm disabled:opacity-50 flex items-center justify-center space-x-2 cursor-pointer"
+                >
+                  <Receipt className="w-4 h-4 text-emerald-400" />
+                  <span>Settle Bill</span>
+                </button>
+              </div>
+            )}
+          </div>
 
         </aside>
       </div>
+
+      {/* Floating Bottom Cart Bar for Mobile & Compact Screens (< lg) */}
+      {cartItems.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-neutral-950/95 backdrop-blur-md border-t border-neutral-800 p-3 px-4 lg:hidden shadow-2xl flex items-center justify-between animate-in slide-in-from-bottom-5">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <ShoppingBag className="w-6 h-6 text-champion-red" />
+              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-champion-red text-white text-[10px] font-black flex items-center justify-center">
+                {cartItems.reduce((sum, i) => sum + i.quantity, 0)}
+              </span>
+            </div>
+            <div>
+              <p className="text-[11px] text-gray-300 font-bold truncate max-w-[130px]">
+                {selectedTable ? `Table ${selectedTable.table_number}` : 'Select table'}
+              </p>
+              <p className="text-sm font-black text-white font-mono">
+                ₹{cartFinalTotal.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById('table-cart-aside');
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="px-4 py-2 rounded-xl bg-champion-red hover:bg-champion-red-hover text-white text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 shadow-md cursor-pointer"
+          >
+            <span>Review & Order</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Dining Tables & Tab Policy Banner */}
       <section className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm">
