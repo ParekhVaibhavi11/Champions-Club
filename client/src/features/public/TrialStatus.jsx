@@ -10,7 +10,6 @@ import {
   Trophy,
   AlertCircle,
   Phone,
-  ArrowLeft,
   FileText,
   ChevronRight,
   CreditCard,
@@ -20,8 +19,12 @@ import {
 import { Button } from '../../components/Button';
 import { Badge } from '../../components/Badge';
 import { TaxInvoiceModal } from '../../components/TaxInvoiceModal';
+import { useAuth } from '../../hooks/useAuth';
+import { hasActiveMembership } from '../../utils/membership';
 
 export const TrialStatus = () => {
+  const { user, isAuthenticated } = useAuth();
+  const hasActivePlan = hasActiveMembership(user, isAuthenticated);
   const [searchParams] = useSearchParams();
   const [referenceCode, setReferenceCode] = useState(searchParams.get('ref') || '');
   const [phone, setPhone] = useState(searchParams.get('phone') || '');
@@ -92,11 +95,10 @@ export const TrialStatus = () => {
     <div className="max-w-3xl mx-auto space-y-6 pb-16 animate-fade-in">
       <div>
         <Link
-          to="/trial"
+          to={hasActivePlan ? '/member/book-court' : '/trial'}
           className="inline-flex items-center space-x-2 text-xs font-bold text-gray-500 hover:text-champion-blue transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Book Another Session</span>
+          <span>{hasActivePlan ? 'Book Court Session' : 'Book Another Guest Session'}</span>
         </Link>
       </div>
 

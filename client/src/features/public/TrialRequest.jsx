@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { trialService } from '../../services/trialService';
 import { useAuth } from '../../hooks/useAuth';
+import { hasActiveMembership } from '../../utils/membership';
 import {
   Trophy,
   Calendar,
@@ -79,7 +80,7 @@ export const TrialRequest = () => {
   const [invoiceModalData, setInvoiceModalData] = useState(null);
   const [error, setError] = useState(null);
 
-  const isMember = isAuthenticated && user?.role === 'member';
+  const hasActivePlan = hasActiveMembership(user, isAuthenticated);
 
   const selectedSport = SPORTS_OPTIONS.find((s) => s.id === formData.sportInterest) || SPORTS_OPTIONS[0];
   const basePrice = selectedSport.baseRate;
@@ -125,7 +126,7 @@ export const TrialRequest = () => {
   };
 
   // 1. MEMBER VIEW: Active Members have full subscription access
-  if (isMember) {
+  if (hasActivePlan) {
     return (
       <div className="max-w-3xl mx-auto space-y-6 pb-16 animate-fade-in">
         <div className="bg-gradient-to-r from-amber-500 via-yellow-600 to-amber-600 text-white rounded-3xl p-8 md:p-12 shadow-xl relative overflow-hidden">

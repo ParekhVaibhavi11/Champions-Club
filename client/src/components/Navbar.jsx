@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Badge } from './Badge';
-import { LogOut, Menu, X, ArrowRight, ArrowLeft, LayoutDashboard } from 'lucide-react';
+import { LogOut, Menu, X, ArrowRight, LayoutDashboard } from 'lucide-react';
+import { hasActiveMembership } from '../utils/membership';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -10,20 +11,10 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isHome = location.pathname === '/';
   const isAdmin = isAuthenticated && user?.role === 'admin';
-  const isMember = isAuthenticated && (user?.role === 'member' || Boolean(user?.membership_tier) || Boolean(user?.membership_id));
-  const isMemberOrAdmin = isMember || isAdmin;
+  const isMember = isAuthenticated && user?.role === 'member';
+  const hasActivePlan = hasActiveMembership(user, isAuthenticated);
   const cafePath = isAdmin ? '/admin/cafe' : (isMember ? '/member/cafe' : '/cafe');
-
-  const handleBack = () => {
-    // If there is browser history, go back; otherwise navigate to root
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -44,7 +35,7 @@ export const Navbar = () => {
     { label: 'Memberships', path: '/plans' },
     { label: 'Gear Shop', path: '/shop' },
     { label: 'Café & Bar', path: cafePath },
-    ...(isMember
+    ...(hasActivePlan
       ? [{ label: 'Book Court', path: '/member/book-court' }]
       : [{ label: 'Guest Booking', path: '/trial' }]),
   ];
@@ -53,19 +44,8 @@ export const Navbar = () => {
     <header className="bg-champion-dark/95 backdrop-blur-md text-white border-b border-neutral-800 sticky top-0 z-50">
       <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 flex items-center justify-between gap-4">
         
-        {/* Left Side: Back Arrow Button (on subpages) + Brand Logo */}
+        {/* Left Side: Brand Logo */}
         <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
-          {!isHome && (
-            <button
-              onClick={handleBack}
-              title="Go Back"
-              className="p-2 sm:p-2.5 rounded-lg bg-neutral-900 border border-neutral-800 hover:bg-neutral-800 text-gray-300 hover:text-white transition-all shadow-sm active:scale-95 flex items-center group"
-              aria-label="Go Back"
-            >
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:text-champion-red transition-colors" />
-            </button>
-          )}
-
           {/* Brand Logo */}
           <Link to="/" className="flex items-center space-x-3 group shrink-0" onClick={() => setMobileMenuOpen(false)}>
             <div className="w-9 h-9 sm:w-11 sm:h-11 bg-champion-red rounded-lg flex items-center justify-center font-black text-lg sm:text-xl tracking-tighter text-white shadow-lg group-hover:scale-105 transition-all">
