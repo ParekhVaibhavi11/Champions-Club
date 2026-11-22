@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { membershipService } from '../../services/membershipService';
+import { useAuth } from '../../hooks/useAuth';
+import { hasActiveMembership } from '../../utils/membership';
 import { 
   ArrowRight, 
   Calendar, 
@@ -21,6 +23,8 @@ import {
 } from 'lucide-react';
 
 export const Home = () => {
+  const { user, isAuthenticated } = useAuth();
+  const hasActivePlan = hasActiveMembership(user, isAuthenticated);
   const [planPrices, setPlanPrices] = useState({});
 
   useEffect(() => {
@@ -421,10 +425,12 @@ export const Home = () => {
               Experience Champions Club
             </span>
             <h2 className="text-3xl sm:text-4xl font-black text-champion-dark uppercase tracking-tight mt-1">
-              Book a Guest Session or Demo
+              {hasActivePlan ? 'Book Your Next Court Session' : 'Book a Guest Session or Demo'}
             </h2>
             <p className="text-sm text-gray-500 mt-2 max-w-lg">
-              Reserve a 60-minute non-member court session or schedule a guided facility tour with our front desk managers today.
+              {hasActivePlan
+                ? 'Choose your sport, court, and time slot to reserve your next member session.'
+                : 'Reserve a 60-minute non-member court session or schedule a guided facility tour with our front desk managers today.'}
             </p>
             <div className="mt-4 flex flex-wrap gap-4 text-xs font-semibold text-gray-600">
               <span className="flex items-center"><MapPin className="w-4 h-4 mr-1 text-champion-red" /> Central Sports Hub, Arena 1</span>
@@ -432,11 +438,11 @@ export const Home = () => {
             </div>
           </div>
           <Link
-            to="/trial"
+            to={hasActivePlan ? '/member/book-court' : '/trial'}
             className="inline-flex items-center bg-champion-dark hover:bg-black text-white text-xs sm:text-sm font-extrabold uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg transition-all hover:scale-105"
           >
             <PhoneCall className="w-4 h-4 mr-2 text-champion-red" />
-            <span>Book Guest Session</span>
+            <span>{hasActivePlan ? 'Book Court Session' : 'Book Guest Session'}</span>
           </Link>
         </div>
       </section>

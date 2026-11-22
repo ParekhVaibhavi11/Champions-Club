@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { membershipService } from '../../services/membershipService';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
@@ -17,7 +16,7 @@ import {
   X,
   CreditCard,
   Check,
-  ArrowLeft
+  ArrowUpCircle,
 } from 'lucide-react';
 
 export const MemberDirectory = () => {
@@ -25,13 +24,13 @@ export const MemberDirectory = () => {
   const [plans, setPlans] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   
   // Modals state
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [isRenewOpen, setIsRenewOpen] = useState(false);
+  const [membershipAction, setMembershipAction] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
   const [renewMonths, setRenewMonths] = useState(12);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
@@ -101,15 +100,35 @@ export const MemberDirectory = () => {
     }
   };
 
-  const handleRenewSubmit = async (e) => {
+  const openMembershipAction = (action, member) => {
+    setSelectedMember(member);
+    setMembershipAction(action);
+    setRenewMonths(12);
+    setErrorMessage('');
+    const availablePlans = action === 'upgrade'
+      ? plans.filter((plan) => Number(plan.monthly_fee) > Number(member.monthly_fee))
+      : plans;
+    setSelectedPlanId(availablePlans[0]?.id || '');
+  };
+
+  const handleMembershipSubmit = async (e) => {
     e.preventDefault();
     if (!selectedMember) return;
     setActionLoading(true);
     setErrorMessage('');
     try {
-      await membershipService.renewMembership(selectedMember.membership_id, renewMonths);
-      setToastMessage(`Renewed ${selectedMember.full_name} for +${renewMonths} month(s)!`);
-      setIsRenewOpen(false);
+      if (membershipAction === 'extend') {
+        await membershipService.renewMembership(selectedMember.membership_id, renewMonths);
+        setToastMessage(`Extended ${selectedMember.full_name}'s plan by ${renewMonths} month(s).`);
+      } else {
+        await membershipService.changeMemberPlan(selectedMember.user_id, {
+          planId: selectedPlanId,
+          durationMonths: renewMonths,
+          action: membershipAction === 'upgrade' ? 'UPGRADE' : 'CHOOSE',
+        });
+        setToastMessage(`${membershipAction === 'upgrade' ? 'Upgraded' : 'Activated a plan for'} ${selectedMember.full_name}.`);
+      }
+      setMembershipAction(null);
       await loadData();
     } catch (err) {
       setErrorMessage(err.message || 'Renewal failed');
@@ -121,17 +140,6 @@ export const MemberDirectory = () => {
   return (
     <div className="space-y-6">
       
-      {/* Back Link Breadcrumb */}
-      <div>
-        <button
-          onClick={() => navigate('/desk/calendar')}
-          className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-champion-red uppercase tracking-wider transition-colors group p-1.5 -ml-1.5 rounded-lg hover:bg-gray-200/60"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-          <span>Back to Master Calendar</span>
-        </button>
-      </div>
-
       {/* Header Bar */}
       <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -209,6 +217,8 @@ export const MemberDirectory = () => {
                 </tr>
               ) : (
                 members.map((m) => {
+                  const hasActivePlan = Boolean(m.membership_id && m.membership_status === 'ACTIVE');
+                  const hasUpgradeOption = plans.some((plan) => Number(plan.monthly_fee) > Number(m.monthly_fee));
                   const isGold = m.plan_tier === 'GOLD';
                   const isSilver = m.plan_tier === 'SILVER';
                   const isJunior = m.plan_tier === 'JUNIOR';
@@ -237,24 +247,27 @@ export const MemberDirectory = () => {
                         {m.end_date ? new Date(m.end_date).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          <CheckCircle className="w-3 h-3 mr-1 text-emerald-600" /> ACTIVE
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold border ${hasActivePlan ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                          {hasActivePlan && <CheckCircle className="w-3 h-3 mr-1 text-emerald-600" />} {hasActivePlan ? 'ACTIVE' : 'NO ACTIVE PLAN'}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          icon={RefreshCw}
-                          onClick={() => {
-                            setSelectedMember(m);
-                            setErrorMessage('');
-                            setIsRenewOpen(true);
-                          }}
-                          className="text-xs font-bold"
-                        >
-                          Renew Plan
-                        </Button>
+                        {!hasActivePlan ? (
+                          <Button variant="primary" size="sm" icon={CreditCard} onClick={() => openMembershipAction('choose', m)} className="text-xs font-bold">
+                            Choose Plan
+                          </Button>
+                        ) : (
+                          <div className="flex justify-end gap-2">
+                            <Button variant="outline" size="sm" icon={RefreshCw} onClick={() => openMembershipAction('extend', m)} className="text-xs font-bold">
+                              Extend
+                            </Button>
+                            {hasUpgradeOption && (
+                              <Button variant="outline" size="sm" icon={ArrowUpCircle} onClick={() => openMembershipAction('upgrade', m)} className="text-xs font-bold">
+                                Upgrade
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -379,12 +392,12 @@ export const MemberDirectory = () => {
         </div>
       )}
 
-      {/* Modal: Renew Membership */}
-      {isRenewOpen && selectedMember && (
+      {/* Modal: Choose, extend, or upgrade a member plan */}
+      {membershipAction && selectedMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-200 relative">
             <button
-              onClick={() => setIsRenewOpen(false)}
+              onClick={() => setMembershipAction(null)}
               className="absolute top-6 right-6 text-gray-400 hover:text-gray-600"
             >
               <X className="w-5 h-5" />
@@ -392,10 +405,10 @@ export const MemberDirectory = () => {
 
             <div className="mb-6">
               <span className="text-xs font-bold text-champion-red uppercase tracking-wider">
-                Extend Validity
+                {membershipAction === 'extend' ? 'Extend Validity' : membershipAction === 'upgrade' ? 'Change Membership Tier' : 'Start Membership'}
               </span>
               <h2 className="text-2xl font-black text-champion-dark uppercase tracking-tight mt-1">
-                Renew Membership
+                {membershipAction === 'extend' ? 'Extend Membership' : membershipAction === 'upgrade' ? 'Upgrade Membership' : 'Choose Membership Plan'}
               </h2>
               <p className="text-xs text-gray-500 mt-1">
                 Athlete: <span className="font-bold text-gray-800">{selectedMember.full_name}</span> ({selectedMember.member_code})
@@ -408,10 +421,32 @@ export const MemberDirectory = () => {
               </div>
             )}
 
-            <form onSubmit={handleRenewSubmit} className="space-y-4">
+            <form onSubmit={handleMembershipSubmit} className="space-y-4">
+              {membershipAction !== 'extend' && (
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                    Select Membership Plan
+                  </label>
+                  <select
+                    required
+                    className="block w-full rounded border border-gray-300 py-2.5 px-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-1 focus:ring-champion-red focus:border-champion-red"
+                    value={selectedPlanId}
+                    onChange={(e) => setSelectedPlanId(e.target.value)}
+                  >
+                    {(membershipAction === 'upgrade'
+                      ? plans.filter((plan) => Number(plan.monthly_fee) > Number(selectedMember.monthly_fee))
+                      : plans
+                    ).map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} (₹{Number(plan.monthly_fee).toLocaleString('en-IN')}/mo)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                  Select Extension Period
+                  {membershipAction === 'extend' ? 'Select Extension Period' : 'Select Membership Duration'}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[1, 6, 12].map((m) => (
@@ -425,31 +460,41 @@ export const MemberDirectory = () => {
                           : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                       }`}
                     >
-                      +{m} {m === 1 ? 'Month' : 'Months'}
+                      {membershipAction === 'extend' ? '+' : ''}{m} {m === 1 ? 'Month' : 'Months'}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600 space-y-1">
-                <div className="flex justify-between">
-                  <span>Current Expiration:</span>
-                  <span className="font-mono font-bold">
-                    {selectedMember.end_date ? new Date(selectedMember.end_date).toLocaleDateString() : 'N/A'}
-                  </span>
+              {membershipAction === 'extend' ? (
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Current Expiration:</span>
+                    <span className="font-mono font-bold">
+                      {selectedMember.end_date ? new Date(selectedMember.end_date).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-champion-dark font-bold">
+                    <span>Status after extension:</span>
+                    <span className="text-emerald-700">ACTIVE</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-champion-dark font-bold">
-                  <span>Status upon renewal:</span>
-                  <span className="text-emerald-700">ACTIVE</span>
-                </div>
-              </div>
+              ) : (
+                <p className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600">
+                  {membershipAction === 'upgrade'
+                    ? 'The upgraded plan starts today and replaces the current plan.'
+                    : 'The selected plan starts today for this existing member.'}
+                </p>
+              )}
 
               <div className="pt-3 flex justify-end space-x-3">
-                <Button variant="ghost" onClick={() => setIsRenewOpen(false)}>
+                <Button variant="ghost" onClick={() => setMembershipAction(null)}>
                   Cancel
                 </Button>
-                <Button type="submit" variant="primary" disabled={actionLoading}>
-                  {actionLoading ? 'Extending...' : 'Confirm Renewal'}
+                <Button type="submit" variant="primary" disabled={actionLoading || (membershipAction !== 'extend' && !selectedPlanId)}>
+                  {actionLoading
+                    ? membershipAction === 'extend' ? 'Extending...' : 'Saving Plan...'
+                    : membershipAction === 'extend' ? 'Confirm Extension' : membershipAction === 'upgrade' ? 'Confirm Upgrade' : 'Activate Plan'}
                 </Button>
               </div>
             </form>

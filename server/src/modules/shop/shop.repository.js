@@ -43,6 +43,23 @@ export const getStockMovements = async () => {
   return result.rows;
 };
 
+export const findActiveMembershipByEmail = async (email) => {
+  const result = await pool.query(`
+    SELECT u.id AS user_id, u.full_name, u.email, m.id AS membership_id,
+           p.name AS plan_name, p.tier AS plan_tier, p.shop_discount_pct
+    FROM users u
+    JOIN memberships m ON m.user_id = u.id
+    JOIN membership_plans p ON p.id = m.plan_id
+    WHERE LOWER(u.email) = LOWER($1)
+      AND u.role = 'member'
+      AND m.status = 'ACTIVE'
+      AND m.end_date >= CURRENT_DATE
+    ORDER BY m.end_date DESC
+    LIMIT 1;
+  `, [email]);
+  return result.rows[0] || null;
+};
+
 export const adjustInventory = async ({ productId, changeQty, userId, notes }) => {
   const client = await pool.connect();
   try {
@@ -71,19 +88,21 @@ export const adjustInventory = async ({ productId, changeQty, userId, notes }) =
   }
 };
 
-export const createShopOrder = async ({ customerId, cashierId, paymentMethod, items }) => {
+export const createShopOrder = async ({ customerId, customerName, customerEmail, cashierId, paymentMethod, items }) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     let discountPct = 0;
+    let membershipTier = null;
     if (customerId) {
       const membership = await client.query(`
-        SELECT p.shop_discount_pct FROM memberships m
+        SELECT p.shop_discount_pct, p.tier FROM memberships m
         JOIN membership_plans p ON p.id = m.plan_id
         WHERE m.user_id = $1 AND m.status = 'ACTIVE' AND m.end_date >= CURRENT_DATE
         ORDER BY m.end_date DESC LIMIT 1;
       `, [customerId]);
       discountPct = Number(membership.rows[0]?.shop_discount_pct || 0);
+      membershipTier = membership.rows[0]?.tier || null;
     }
 
     let subtotal = 0;
@@ -117,10 +136,10 @@ export const createShopOrder = async ({ customerId, cashierId, paymentMethod, it
     const totalAmount = subtotal - discountAmount;
     const receiptNo = `GEAR-${Date.now()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
     const orderResult = await client.query(`
-      INSERT INTO shop_orders (receipt_no, customer_id, cashier_id, subtotal, discount_amount, total_amount, payment_method)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, receipt_no, customer_id, subtotal, discount_amount, total_amount, payment_method, created_at;
-    `, [receiptNo, customerId || null, cashierId, subtotal, discountAmount, totalAmount, paymentMethod]);
+      INSERT INTO shop_orders (receipt_no, customer_id, customer_name, customer_email, cashier_id, subtotal, discount_amount, membership_discount_pct, membership_tier, total_amount, payment_method, receipt_email_status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'PENDING')
+      RETURNING id, receipt_no, customer_id, customer_name, customer_email, cashier_id, subtotal, discount_amount, membership_discount_pct, membership_tier, total_amount, payment_method, receipt_email_status, created_at;
+    `, [receiptNo, customerId || null, customerName, customerEmail, cashierId, subtotal, discountAmount, discountPct, membershipTier, totalAmount, paymentMethod]);
     const order = orderResult.rows[0];
 
     for (const item of orderItems) {
@@ -171,6 +190,7 @@ export const listShopOrders = async ({ search = '', customerId = null } = {}) =>
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const result = await pool.query(`
+<<<<<<< HEAD
     SELECT o.id, o.receipt_no, o.subtotal, o.discount_amount, o.total_amount, o.payment_method, o.created_at,
            cashier.full_name AS cashier_name, customer.full_name AS customer_name,
            COALESCE(
@@ -194,5 +214,41 @@ export const listShopOrders = async ({ search = '', customerId = null } = {}) =>
     GROUP BY o.id, cashier.full_name, customer.full_name
     ORDER BY o.created_at DESC LIMIT 150;
   `, params);
+=======
+    SELECT o.id, o.receipt_no, o.customer_name, o.customer_email,
+           o.subtotal, o.discount_amount, o.membership_discount_pct, o.membership_tier,
+           o.total_amount, o.payment_method,
+           o.receipt_email_status, o.receipt_emailed_at, o.created_at,
+           cashier.full_name AS cashier_name,
+           COALESCE(order_items.items, '[]'::json) AS items
+    FROM shop_orders o
+    JOIN users cashier ON cashier.id = o.cashier_id
+    LEFT JOIN LATERAL (
+      SELECT json_agg(json_build_object(
+        'product_id', oi.product_id,
+        'name', p.name,
+        'quantity', oi.quantity,
+        'unit_price', oi.unit_price,
+        'subtotal', oi.subtotal
+      ) ORDER BY oi.id) AS items
+      FROM shop_order_items oi
+      JOIN products p ON p.id = oi.product_id
+      WHERE oi.order_id = o.id
+    ) order_items ON TRUE
+    ORDER BY o.created_at DESC LIMIT 100;
+  `);
+>>>>>>> faef837912454fd631d3d9887bf30e8d6046b8c5
   return result.rows;
+};
+
+export const updateReceiptEmailStatus = async (orderId, status) => {
+  const result = await pool.query(
+    `UPDATE shop_orders
+     SET receipt_email_status = $2,
+         receipt_emailed_at = CASE WHEN $2 = 'SENT' THEN NOW() ELSE receipt_emailed_at END
+     WHERE id = $1
+     RETURNING receipt_email_status, receipt_emailed_at`,
+    [orderId, status]
+  );
+  return result.rows[0];
 };

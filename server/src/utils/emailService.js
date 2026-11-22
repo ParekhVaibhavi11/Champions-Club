@@ -16,6 +16,7 @@ export const sendStaffInvitationCredentials = async ({ toEmail, fullName, passwo
     return { sent: true, mode: 'dev' };
   }
 
+const createEmailTransporter = (user, cleanPass) => {
   const isGmail = process.env.SMTP_HOST?.includes('gmail') || user?.includes('gmail');
   const transportConfig = isGmail
     ? { service: 'gmail', auth: { user, pass: cleanPass } }
@@ -52,6 +53,57 @@ export const sendStaffInvitationCredentials = async ({ toEmail, fullName, passwo
     `,
   });
   return { sent: true, mode: 'smtp' };
+  return nodemailer.createTransport(transportConfig);
+};
+
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+}[char]));
+
+export const sendGearShopReceipt = async (toEmail, customerName, receipt) => {
+  const cleanPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
+  const user = process.env.SMTP_USER;
+  const itemsHtml = (receipt.items || []).map((item) => `
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #e5e7eb">${escapeHtml(item.name)}</td>
+      <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:center">${Number(item.quantity)}</td>
+      <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:right">₹${Number(item.subtotal).toFixed(2)}</td>
+    </tr>
+  `).join('');
+  const discountDescription = Number(receipt.membership_discount_pct) > 0
+    ? `Membership discount (${escapeHtml(receipt.membership_tier)} ${Number(receipt.membership_discount_pct)}%)`
+    : 'Discount';
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111827">
+      <h1 style="color:#c8102e;margin-bottom:4px">Champions Club</h1>
+      <h2 style="margin-top:0">Gear Shop Receipt</h2>
+      <p>Hello ${escapeHtml(customerName)}, thank you for your purchase.</p>
+      <p><strong>Receipt:</strong> ${escapeHtml(receipt.receipt_no)}<br>
+         <strong>Date:</strong> ${new Date(receipt.created_at).toLocaleString('en-IN')}<br>
+         <strong>Payment:</strong> ${escapeHtml(receipt.payment_method)}</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0">
+        <thead><tr><th style="text-align:left;padding:10px;border-bottom:2px solid #111827">Item</th><th style="padding:10px;border-bottom:2px solid #111827">Qty</th><th style="text-align:right;padding:10px;border-bottom:2px solid #111827">Amount</th></tr></thead>
+        <tbody>${itemsHtml}</tbody>
+      </table>
+      <p style="text-align:right"><strong>Subtotal:</strong> ₹${Number(receipt.subtotal).toFixed(2)}<br>
+        <strong>${discountDescription}:</strong> −₹${Number(receipt.discount_amount).toFixed(2)}<br>
+        <strong>Total paid:</strong> ₹${Number(receipt.total_amount).toFixed(2)}</p>
+      <p style="color:#6b7280;font-size:12px">Please keep this email as your purchase receipt.</p>
+    </div>`;
+
+  if (!user || !cleanPass) {
+    console.log(`[DEV MODE] Gear Shop receipt ${receipt.receipt_no} for ${toEmail}: ${Number(receipt.total_amount).toFixed(2)}`);
+    return { sent: true, mode: 'dev' };
+  }
+
+  const transporter = createEmailTransporter(user, cleanPass);
+  const info = await transporter.sendMail({
+    from: process.env.SMTP_FROM || `"Champions Club" <${user}>`,
+    to: toEmail,
+    subject: `Your Champions Club Gear Shop receipt ${receipt.receipt_no}`,
+    html,
+  });
+  return { sent: true, mode: 'smtp', messageId: info.messageId };
 };
 
 export const sendPasswordResetOTP = async (toEmail, otpCode) => {

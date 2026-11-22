@@ -13,6 +13,9 @@ export const membershipService = {
   registerMember: async (memberData) => {
     return await api.post('/members', memberData);
   },
+  changeMemberPlan: async (userId, planData) => {
+    return await api.post(`/members/${userId}/plan`, planData);
+  },
   renewMembership: async (membershipId, months = 1) => {
     return await api.post(`/memberships/${membershipId}/renew`, { months });
   },

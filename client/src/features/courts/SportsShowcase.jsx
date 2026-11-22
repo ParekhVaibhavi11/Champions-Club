@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { courtService } from '../../services/courtService';
 import { 
   Trophy, 
   ArrowRight, 
-  ArrowLeft,
   Calendar, 
   ShieldCheck, 
   Sparkles, 
@@ -19,7 +18,6 @@ export const SportsShowcase = () => {
   const [sports, setSports] = useState([]);
   const [courts, setCourts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,17 +75,6 @@ export const SportsShowcase = () => {
     <div className="min-h-screen bg-champion-grey py-10 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Back Link Breadcrumb */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-champion-red uppercase tracking-wider transition-colors group p-1.5 -ml-1.5 rounded-lg hover:bg-gray-200/60"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            <span>Go Back</span>
-          </button>
-        </div>
-
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs sm:text-sm font-extrabold text-champion-red uppercase tracking-widest flex items-center justify-center">

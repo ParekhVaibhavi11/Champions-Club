@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { courtService } from '../../services/courtService';
 import { Badge } from '../../components/Badge';
@@ -7,7 +7,6 @@ import { Button } from '../../components/Button';
 import { 
   Calendar, 
   Clock, 
-  ArrowLeft, 
   CheckCircle, 
   XCircle, 
   Users, 
@@ -27,7 +26,6 @@ const toLocalDateString = (date) => {
 
 export const AvailabilityMatrix = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
 
   const hasMembership = isAuthenticated && Boolean(
@@ -131,17 +129,6 @@ export const AvailabilityMatrix = () => {
     <div className="min-h-screen bg-champion-grey py-10 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Back Link Breadcrumb */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-champion-red uppercase tracking-wider transition-colors group p-1.5 -ml-1.5 rounded-lg hover:bg-gray-200/60"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            <span>Go Back</span>
-          </button>
-        </div>
-
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
-import { Lock, ArrowRight, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Lock, ArrowRight, CheckCircle } from 'lucide-react';
 
 export const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -123,7 +123,7 @@ export const ResetPassword = () => {
 
               <div className="pt-2 text-center">
                 <Link to="/login" className="text-xs font-semibold text-gray-500 hover:text-champion-dark inline-flex items-center">
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back to Login
+                  Sign In
                 </Link>
               </div>
             </form>

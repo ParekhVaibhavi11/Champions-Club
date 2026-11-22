@@ -8,7 +8,6 @@ import {
   Trophy, 
   Shield, 
   ArrowRight, 
-  ArrowLeft,
   Activity, 
   Calendar,
   Clock,
@@ -102,17 +101,6 @@ export const Plans = () => {
     <div className="min-h-screen bg-champion-grey py-10 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Back Link Breadcrumb */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center text-xs font-bold text-gray-500 hover:text-champion-red uppercase tracking-wider transition-colors group p-1.5 -ml-1.5 rounded-lg hover:bg-gray-200/60"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            <span>Go Back</span>
-          </button>
-        </div>
-
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="text-xs sm:text-sm font-extrabold text-champion-red uppercase tracking-widest flex items-center justify-center">

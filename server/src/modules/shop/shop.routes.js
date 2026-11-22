@@ -8,6 +8,7 @@ const router = Router();
 router.get('/products', controller.products);
 router.get('/inventory', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('shop'), controller.inventory);
 router.get('/inventory/movements', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('shop'), controller.movements);
+router.post('/shop/discount/verify', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('shop'), controller.verifyMembershipDiscount);
 router.post('/inventory/adjustments', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('shop'), controller.adjustInventory);
 router.get('/shop/orders', authenticateToken, authorizeRole(['staff', 'admin']), checkStaffSubPermission('shop'), controller.orders);
 router.get('/shop/orders/my-orders', authenticateToken, authorizeRole(['member', 'admin']), controller.myOrders);
