@@ -84,3 +84,12 @@ export const reviewLeave = async (req, res, next) => {
         next(err);
     }
 };
+
+export const createStaff = async (req, res, next) => {
+    try {
+        const staff = await hrService.createStaff(req.body);
+        return successResponse(res, staff, 'Staff member created successfully', 201);
+    } catch (err) {
+        next(err);
+    }
+};

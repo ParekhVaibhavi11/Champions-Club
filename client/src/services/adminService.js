@@ -8,5 +8,6 @@ export const adminService = {
   createMembershipPlan: (plan) => api.post('/admin/membership-plans', plan),
   updateMembershipPlan: (id, plan) => api.put(`/admin/membership-plans/${id}`, plan),
   getHrOverview: () => api.get('/admin/hr/overview'),
+  createStaff: (payload) => api.post('/admin/hr/staff', payload),
   reviewLeave: (id, status) => api.patch(`/admin/hr/leave-requests/${id}`, { status }),
 };

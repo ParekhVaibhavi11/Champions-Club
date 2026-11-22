@@ -19,3 +19,51 @@ export const updateLeaveStatus = async (id, status, adminId) => {
   const result = await pool.query(`UPDATE leave_requests SET status = $2, reviewed_by_id = $3 WHERE id = $1 AND status = 'PENDING' RETURNING id, status, reviewed_by_id`, [id, status, adminId]);
   return result.rows[0];
 };
+
+export const createStaffEmployee = async ({ fullName, email, phone, role, department, jobTitle, monthlySalary, passwordHash }) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // 1. Create User
+    const userResult = await client.query(
+      `INSERT INTO users (full_name, email, phone, role, password_hash)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, full_name, email, phone, role, created_at;`,
+      [fullName, email.toLowerCase(), phone || null, role, passwordHash]
+    );
+    const newUser = userResult.rows[0];
+
+    // 2. Create staff_profiles row with appropriate flags
+    const canAccessPos = department === 'shop' || department === 'cafe' || role === 'front_desk';
+    const canAccessKitchen = department === 'kitchen';
+    await client.query(
+      `INSERT INTO staff_profiles (user_id, department, can_access_pos, can_access_kitchen, hourly_wage, hire_date, is_active)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, TRUE)
+       ON CONFLICT (user_id) DO NOTHING;`,
+      [newUser.id, department, canAccessPos, canAccessKitchen, monthlySalary ? monthlySalary / 160 : 0]
+    );
+
+    // 3. Create employees record
+    const empResult = await client.query(
+      `INSERT INTO employees (user_id, job_title, department, monthly_salary, hire_date, is_active)
+       VALUES ($1, $2, $3, $4, CURRENT_DATE, TRUE)
+       RETURNING id, job_title, department, monthly_salary, hire_date, is_active;`,
+      [newUser.id, jobTitle || 'Staff Member', department, monthlySalary || 0]
+    );
+
+    await client.query('COMMIT');
+    return {
+      ...newUser,
+      employee_id: empResult.rows[0].id,
+      job_title: empResult.rows[0].job_title,
+      department: empResult.rows[0].department,
+      monthly_salary: empResult.rows[0].monthly_salary,
+    };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+};

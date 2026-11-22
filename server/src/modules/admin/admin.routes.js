@@ -12,5 +12,6 @@ router.get('/membership-plans', controller.membershipPlans);
 router.post('/membership-plans', controller.createMembershipPlan);
 router.put('/membership-plans/:id', controller.updateMembershipPlan);
 router.get('/hr/overview', controller.hrOverview);
+router.post('/hr/staff', controller.createStaff);
 router.patch('/hr/leave-requests/:id', controller.reviewLeave);
 export default router;
